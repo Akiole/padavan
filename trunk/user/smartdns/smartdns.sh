@@ -515,7 +515,7 @@ Start_smartdns () {
         logger -t "SmartDNS" "DNSmasq 进程已重启..."
     fi
     # 启动 smartdns 进程
-    "$smartdns_Bin" -f -c "$smartdns_Conf" "$args"  &>/dev/null &
+    "$smartdns_Bin" -f -R -c "$smartdns_Conf" "$args"  &>/dev/null &
     sleep 1
     smartdns_process=$(pidof smartdns | awk '{ print $1 }')
     if [ "$smartdns_process"x = x ] ; then
