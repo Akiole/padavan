@@ -1,11 +1,11 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=3.0.16
+PKG_VERSION:=3.5.4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.openssl.org/source/
-PKG_HASH:=57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86
+PKG_HASH:=967311f84955316969bdb1d8d4b983718ef42338639c621ec4c34fddef355e99
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,8 +21,9 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
 OPENSSL_CIPHERS += no-rc2
 endif
 
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
-OPENSSL_CIPHERS += no-ec
+ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) \
+                  $(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)))
+OPENSSL_OPTIONS += no-ec
 endif
 
 CONFIGURE_CMD = ./Configure
