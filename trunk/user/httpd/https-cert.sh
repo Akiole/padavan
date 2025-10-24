@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ ! -x /usr/bin/openssl ] && [ ! -x /opt/bin/openssl ]; then
+if [ ! -x /usr/bin/openssl ] && [ ! -x /bin/openssl ]; then
   echo "Unable to find the 'openssl' executable!" >&2
   echo "Please install 'openssl-util' package from Entware." >&2
   exit 1
