@@ -10,16 +10,16 @@ PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5f
 
 include $(INCLUDE_DIR)/package.mk
 
-# 适配现有工具链，仅保留CC和CXX变量
+# 直接传入工具链路径，不使用export变量
 define Build/Compile
 	# 先执行主程序原有编译
 	$(call Build/Compile/Default)
 	
-	# 追加UI插件编译，仅指定可用的C/C++编译器（基于现有gcc工具链）
+	# 追加UI插件编译，直接指定编译器路径（含ccache）
 	cd $(PKG_BUILD_DIR) && \
-	export CC=$(TARGET_CC); \          # 对应 mipsel-linux-musl-gcc（核心C编译器）
-	export CXX=$(TARGET_CXX); \        # 对应 mipsel-linux-musl-g++（C++编译器）
-	export RUSTFLAGS="-C linker=$(TARGET_CC) -C link-arg=-static -C target-cpu=mips32"; \
+	CC="$(TARGET_CC)" \
+	CXX="$(TARGET_CXX)" \
+	RUSTFLAGS="-C linker=$(TARGET_CC) -C link-arg=-static -C target-cpu=mips32" \
 	./package/build-pkg.sh \
 		--platform linux \
 		--arch mipsle \
