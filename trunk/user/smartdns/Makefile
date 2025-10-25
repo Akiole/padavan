@@ -10,7 +10,23 @@ PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5f
 
 include $(INCLUDE_DIR)/package.mk
 
-# 编译规则：只编译UI插件，主程序沿用你原来的旧规则（不重复编译）
+# 新增：定义 Rust 目标架构并检查安装
+RUST_TARGET:=mips-unknown-linux-musl
+
+define Build/Prepare
+	$(call Build/Prepare/Default)  # 保留默认准备步骤
+	
+	# 检查并安装 Rust 目标工具链（仅新增这部分）
+	if ! command -v rustup &> /dev/null; then \
+		echo "Error: rustup not installed. Please install Rust first."; \
+		exit 1; \
+	fi
+	if ! rustup target list | grep -q "$(RUST_TARGET) (installed)"; then \
+		rustup target add $(RUST_TARGET); \
+	fi
+endef
+
+# 保留原有原有编译规则（不修改）
 define Build/Compile
 	# 仅编译UI插件（不碰主程序，避免影响原有功能）
 	cd $(PKG_BUILD_DIR) && \
@@ -29,7 +45,7 @@ endef
 
 $(eval $(call BuildPackage,smartdns))
 
-# romfs规则：保留原有主程序安装，仅新增UI插件
+# 保留原有romfs规则（不修改）
 romfs:
 	# 沿用你原来的主程序安装路径（完全不变）
 	$(INSTALL_DIR) $(ROMFSDIR)/usr/bin
