@@ -10,16 +10,13 @@ PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5f
 
 include $(INCLUDE_DIR)/package.mk
 
-# 直接传入工具链路径，不使用export变量
 define Build/Compile
 	# 先执行主程序原有编译
 	$(call Build/Compile/Default)
 	
-	# 追加UI插件编译，直接指定编译器路径（含ccache）
+	# 追加UI插件编译，使用默认工具链
 	cd $(PKG_BUILD_DIR) && \
-	CC="$(TARGET_CC)" \
-	CXX="$(TARGET_CXX)" \
-	RUSTFLAGS="-C linker=$(TARGET_CC) -C link-arg=-static -C target-cpu=mips32" \
+	RUSTFLAGS="-C link-arg=-static -C target-cpu=mips32" \
 	./package/build-pkg.sh \
 		--platform linux \
 		--arch mipsle \
