@@ -10,9 +10,6 @@ PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5f
 
 include $(INCLUDE_DIR)/package.mk
 
-# 新增：定义 Rust 目标架构并检查安装
-RUST_TARGET:=mips-unknown-linux-musl
-
 define Build/Prepare
 	$(call Build/Prepare/Default)  # 保留默认准备步骤
 	
@@ -20,9 +17,6 @@ define Build/Prepare
 	if ! command -v rustup &> /dev/null; then \
 		echo "Error: rustup not installed. Please install Rust first."; \
 		exit 1; \
-	fi
-	if ! rustup target list | grep -q "$(RUST_TARGET) (installed)"; then \
-		rustup target add $(RUST_TARGET); \
 	fi
 endef
 
