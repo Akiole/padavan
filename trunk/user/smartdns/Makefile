@@ -4,7 +4,7 @@ PKG_NAME:=smartdns
 PKG_VERSION:=1.2025.09.18-2244
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/pymumu/smartdns.git
+PKG_SOURCE_URL:=https://www.github.com/pymumu/smartdns.git
 PKG_SOURCE_VERSION:=0f1912ab020ea9a60efac4732442f0bb7093f40b
 PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5fc
 
@@ -18,10 +18,7 @@ define Build/Compile
 		--platform linux \
 		--arch mipsle \
 		--with-ui \
-		--static \
-		--cc=$(TARGET_CC) \
-		--cflags="$(TARGET_CFLAGS)" \
-		--ldflags="$(TARGET_LDFLAGS)"
+		--static
 endef
 
 define Package/smartdns
