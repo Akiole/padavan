@@ -1,12 +1,14 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=smartdns
-PKG_VERSION:=1.2025.09.18-2244
+PKG_VERSION:=Release47  # 与标签名一致，确保路径正确
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://www.github.com/pymumu/smartdns.git
-PKG_SOURCE_VERSION:=0f1912ab020ea9a60efac4732442f0bb7093f40b
-PKG_MIRROR_HASH:=40a4f975ed79ccc5043cfbc9875e862d2db62540188cbe382219f7adeacfc5fc
+# 拆分URL，自动拼接为完整链接
+PKG_SOURCE_URL:=https://github.com/pymumu/smartdns/archive/refs/tags/
+PKG_SOURCE:=Release47.tar.gz
+
+# 明确源码解压目录（与拼接后的下载包解压结果一致）
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
