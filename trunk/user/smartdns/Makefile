@@ -7,7 +7,7 @@ PKG_VERSION:=Release47
 PKG_SOURCE_URL:=https://github.com/pymumu/smartdns/archive/refs/tags/
 PKG_SOURCE:=Release47.tar.gz
 # 填写实际计算的SHA256哈希（必须！）
-PKG_MIRROR_HASH:=ignore
+PKG_MIRROR_HASH:=90414fc46de16bdec69a8511d78616287db17c5cc20034c210978896dfa7530a
 
 include $(INCLUDE_DIR)/package.mk
 
