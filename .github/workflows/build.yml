@@ -1,9 +1,6 @@
 name: Build Firmware
 
 on:
-  push:
-    branches:
-      - "*"
   workflow_dispatch:
 
 jobs:
@@ -16,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [K2P, K2P-USB]
+        target: [K2P]
         toolchain: [mipsel-linux-musl]
 
     steps:
@@ -29,7 +26,7 @@ jobs:
 
       - uses: actions/setup-go@main
         with:
-          go-version: '1.24.x'
+          go-version: '1.25.x'
           check-latest: true
           cache: false
 
