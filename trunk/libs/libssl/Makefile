@@ -1,50 +1,55 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=3.0.16
-
+PKG_VERSION:=3.5.4
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.openssl.org/source/
-PKG_HASH:=57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86
+PKG_HASH:=967311f84955316969bdb1d8d4b983718ef42338639c621ec4c34fddef355e99
 
 include $(INCLUDE_DIR)/package.mk
 
-OPENSSL_CIPHERS = no-capieng no-cms no-rfc3779 no-seed \
-  no-ec2m no-err no-threads no-idea no-rc5 no-rmd160 \
-  no-static-engine no-md2 no-sse2 no-dso no-ts no-mdc2 \
-  no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3 \
-  no-async no-blake2 no-hw-padlock no-aria no-hw \
-  no-devcryptoeng no-ssl3-method no-tests no-sm2 \
-  no-sm3 no-sm4 no-afalgeng no-comp
+OPENSSL_OPTIONS = no-async \
+	no-capieng no-cms no-rfc3779 no-seed \
+	no-ec2m no-err no-idea no-rc5 no-rmd160 \
+	no-static-engine no-md2 no-sse2 no-dso no-ts no-mdc2 \
+	no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3 \
+	no-blake2 no-hw-padlock no-aria no-hw \
+	no-devcryptoeng no-ssl3-method no-tests no-sm2 \
+	no-sm3 no-sm4 no-afalgeng no-comp
 
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
-OPENSSL_CIPHERS += no-rc2
+ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) \
+                  $(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)))
+OPENSSL_OPTIONS += no-ec
 endif
 
-ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC),y)
-OPENSSL_CIPHERS += no-ec
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_SSWAN),y)
+OPENSSL_OPTIONS += no-rc2
 endif
 
 CONFIGURE_CMD = ./Configure
 CONFIGURE_ARGS = \
 	linux-mips32 \
 	shared \
+	enable-tls1_3 \
+	enable-quic \
 	--prefix=$(STAGING_DIR) \
 	--openssldir=/etc/ssl \
-	$(OPENSSL_CIPHERS)
+	$(OPENSSL_OPTIONS)
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS)
+endef
 
 define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(MAKE_FLAGS) \
 		DESTDIR= \
 		install_sw
-	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(MAKE_FLAGS) \
 		DESTDIR=$(STAGING_DIR) \
 		install_ssldirs
 endef
-
-$(eval $(call BuildPackage,openssl))
 
 romfs:
 	$(INSTALL_DIR) $(ROMFSDIR)/lib
@@ -57,3 +62,4 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE),y)
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/openssl $(ROMFSDIR)/bin/
 endif
 
+$(eval $(call BuildPackage,openssl))
