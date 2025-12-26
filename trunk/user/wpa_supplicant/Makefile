@@ -1,6 +1,10 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
+PKG_VERSION:=2.11
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://w1.fi/releases/
+PKG_HASH:=912ea06f74e30a8e36fbb68064d6cdff218d8d591db0fc5d75dee6c81ac7fc0a
 
 include $(INCLUDE_DIR)/package.mk
 
