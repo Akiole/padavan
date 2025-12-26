@@ -54,4 +54,3 @@ romfs:
 	# 从stage路径复制插件
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppoe.so $(PPP_ROMFS_PLUGIN_DIR)/
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppol2tp.so $(PPP_ROMFS_PLUGIN_DIR)/
-endef
