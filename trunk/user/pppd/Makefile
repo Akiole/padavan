@@ -12,7 +12,7 @@ PKG_FIXUP:=autoreconf
 include $(INCLUDE_DIR)/package.mk
 
 PPP_BUILD_PLUGIN_DIR:=$(PKG_BUILD_DIR)/pppd/plugins
-PPP_STAGE_PLUGIN_DIR:=$(STAGING_DIR)/lib/pppd
+PPP_STAGE_PLUGIN_DIR:=$(STAGING_DIR)/lib/pppd/$(PKG_VERSION)
 PPP_ROMFS_PLUGIN_DIR:=$(ROMFSDIR)/usr/lib/pppd
 
 define Build/Prepare
@@ -29,6 +29,7 @@ define Build/Configure
 		--with-pcap=linux \
 		$(if $(CONFIG_IPV6),--enable-ipv6,) \
 		--prefix=/usr \
+		--bindir=/usr/sbin \
 		--libdir=/lib \
 		--disable-versioned-libs \
 	)
@@ -51,6 +52,6 @@ romfs:
 	# 创建插件目录
 	$(INSTALL_DIR) $(PPP_ROMFS_PLUGIN_DIR)
 	
-	# 从stage路径复制插件
+	# 从正确的stage路径复制插件
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppoe.so $(PPP_ROMFS_PLUGIN_DIR)/
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppol2tp.so $(PPP_ROMFS_PLUGIN_DIR)/
