@@ -11,6 +11,7 @@ PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
+# 插件路径
 PPP_BUILD_PLUGIN_DIR:=$(PKG_BUILD_DIR)/pppd/plugins
 PPP_STAGE_PLUGIN_DIR:=$(STAGING_DIR)/lib/pppd/$(PKG_VERSION)
 PPP_ROMFS_PLUGIN_DIR:=$(ROMFSDIR)/usr/lib/pppd
@@ -45,13 +46,13 @@ endef
 $(eval $(call BuildPackage,ppp))
 
 romfs:
-	# 安装 pppd 主程序
+	# 安装主程序
 	$(INSTALL_DIR) $(ROMFSDIR)/usr/sbin
-	$(INSTALL_BIN) $(STAGING_DIR)/usr/sbin/pppd $(ROMFSDIR)/usr/sbin/pppd
+	$(INSTALL_BIN) $(STAGING_DIR)/sbin/pppd $(ROMFSDIR)/usr/sbin/pppd
 	
 	# 创建插件目录
 	$(INSTALL_DIR) $(PPP_ROMFS_PLUGIN_DIR)
 	
-	# 从正确的stage路径复制插件
+	# 复制插件
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppoe.so $(PPP_ROMFS_PLUGIN_DIR)/
 	$(CP) $(PPP_STAGE_PLUGIN_DIR)/pppol2tp.so $(PPP_ROMFS_PLUGIN_DIR)/
