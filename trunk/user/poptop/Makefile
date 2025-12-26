@@ -14,31 +14,33 @@ CONFIGURE_ARGS += \
 	--enable-bcrelay
 CONFIGURE_VARS += \
 	ac_cv_header_libintl_h=no \
-	ac_cv_func_logwtmp=no \
-	CFLAGS="$(TARGET_CFLAGS) -Wno-error=implicit-function-declaration -Wno-incomplete-type"
+	ac_cv_func_logwtmp=yes \
+	CFLAGS="$(TARGET_CFLAGS) -Wno-error=implicit-function-declaration -Wno-incomplete-type -Wno-unused-variable"
 
 MAKE_FLAGS += \
 	COPTS="$(TARGET_CFLAGS)" \
 	INSTALL="install"
 
-# 修复宏定义和头文件缺失
+# 修复Shell语法（每行末尾加\，fi单独成行）
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	# 修复 MSG_TRYHARD 宏
-	sed -i 's/MSG_DONTWAIT|MSG_TRYHARD/MSG_DONTWAIT/g' $(PKG_BUILD_DIR)/bcrelay.c
-	# 修复 plugins/pptpd-logwtmp.c 头文件缺失
+	# 1. 修复MSG_TRYHARD宏
+	sed -i 's/MSG_DONTWAIT|MSG_TRYHARD/MSG_DONTWAIT/g' $(PKG_BUILD_DIR)/bcrelay.c \
+	# 2. 给logwtmp.c补头文件（加\换行，Shell语法正确）
 	if [ -f $(PKG_BUILD_DIR)/plugins/pptpd-logwtmp.c ]; then \
+		sed -i '1i #include <sys/types.h>' $(PKG_BUILD_DIR)/plugins/pptpd-logwtmp.c; \
 		sed -i '1i #include <sys/socket.h>' $(PKG_BUILD_DIR)/plugins/pptpd-logwtmp.c; \
 		sed -i '1i #include <utmp.h>' $(PKG_BUILD_DIR)/plugins/pptpd-logwtmp.c; \
+		sed -i '1i #define logwtmp(a,b,c) do {} while(0)' $(PKG_BUILD_DIR)/plugins/pptpd-logwtmp.c; \
 	fi
 endef
 
-# 彻底禁用 plugins 编译
+# 修复sed命令（去掉\$$d的转义）
 define Build/Configure
 	$(call Build/Configure/Default)
-	# 删除 plugins 编译语句
-	sed -i '/^for d in plugins; do/d' $(PKG_BUILD_DIR)/Makefile
-	sed -i '/plugins/d' $(PKG_BUILD_DIR)/Makefile
+	# 正确匹配plugins编译循环（无转义）
+	sed -i '/^for d in plugins; do make -w -C $d all; done/d' $(PKG_BUILD_DIR)/Makefile
+	sed -i 's/SUBDIRS = . plugins/SUBDIRS = ./g' $(PKG_BUILD_DIR)/Makefile
 endef
 
 $(eval $(call BuildPackage,pptpd))
