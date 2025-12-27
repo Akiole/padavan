@@ -847,5 +847,4 @@ Main () {
 }
 
 Read_ini
-Check_md5
 Main
