@@ -4,7 +4,7 @@ PKG_NAME:=smartdns
 PKG_VERSION:=1.2025.47
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://www.github.com/Akiole/smartdns.git
+PKG_SOURCE_URL:=https://github.com/pymumu/smartdns.git
 PKG_SOURCE_VERSION:=dcc981633bd87b034952125d65c45e2fcece9daa
 PKG_MIRROR_HASH:=5f4ae40cf900aea1654bc17ffd634dc76c8fa2240d92fb06c0c3f52b4f71068c
 
