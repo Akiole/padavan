@@ -30,6 +30,15 @@ jobs:
           check-latest: true
           cache: false
 
+      - name: Install UPX
+        run: |
+          echo "📦 安装 UPX 压缩工具..."
+          wget -q https://github.com/upx/upx/releases/download/v4.2.1/upx-4.2.1-amd64_linux.tar.xz
+          tar -xf upx-4.2.1-amd64_linux.tar.xz
+          sudo cp upx-4.2.1-amd64_linux/upx /usr/local/bin/
+          upx --version
+          echo "✅ UPX 安装完成"
+          
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
