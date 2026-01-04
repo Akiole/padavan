@@ -8,17 +8,16 @@ PKG_SOURCE_URL:=https://github.com/AdguardTeam/AdGuardHome/archive/refs/tags/
 PKG_SOURCE_URL_FILE:=v$(PKG_VERSION).tar.gz
 PKG_HASH:=f3dde5da6ba48270ac25bd2f501c4ce1af54ddeef93fcd84ef3a8270cec9539f
 
-PATCH:=0
 include $(INCLUDE_DIR)/package.mk
 
 LD_FLAGS:= \
 	-X github.com/AdguardTeam/AdGuardHome/internal/version.channel=release \
 	-X github.com/AdguardTeam/AdGuardHome/internal/version.version=$(PKG_VERSION)
 
-# 屏蔽补丁后：删除无用的zip -r embed.zip build 步骤，仅保留前端构建
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		NODE_OPTIONS=--openssl-legacy-provider make js-deps js-build; \
+		zip -r embed.zip build; \
 	)
 endef
 
