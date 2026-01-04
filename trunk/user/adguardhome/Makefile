@@ -27,6 +27,16 @@ define Build/Compile
 		go build -v -o AdGuardHome \
 		-trimpath -ldflags "$(LD_FLAGS) -s -w -buildid=" \
 		.; \
+		# 新增：UPX压缩 AdGuardHome 二进制
+		# --best：高压缩比（平衡速度与体积）
+		# --lzma：最优压缩算法（体积最小，嵌入式首选）
+		# 直接压缩原文件，无需保留备份（若需保留，添加 -k 参数）
+		if command -v upx >/dev/null 2>&1; then \
+			upx --best --lzma AdGuardHome; \
+			echo "✅ AdGuardHome 二进制压缩完成"; \
+		else \
+			echo "⚠️  未找到 UPX 工具，跳过二进制压缩"; \
+		fi \
 	)
 endef
 
