@@ -22,23 +22,28 @@ define Build/Configure
 endef
 
 define Build/Compile
+	# 第一步：执行原始编译逻辑
 	(cd $(PKG_BUILD_DIR); \
 		GOOS=linux GOARCH=mipsle CGO_ENABLED=0 \
 		go build -v -o AdGuardHome \
 		-trimpath -ldflags "$(LD_FLAGS) -s -w -buildid=" \
 		.; \
 	)
+	# 第二步：显式调用UPX压缩（直接在Compile目标内执行，无需独立目标追加，规避语法错误）
+	$(call Build/Compress)
 endef
 
-# 新增独立目标：单独用于UPX压缩，完全脱离其他阶段
+# 独立UPX压缩目标（保持原有逻辑，供Compile目标显式调用）
 define Build/Compress
-	# 单独执行压缩命令，无嵌套括号冲突
-	upx --best --lzma $(PKG_BUILD_DIR)/AdGuardHome
-	echo "✅ AdGuardHome 二进制通过独立目标压缩完成"
+	# 单独执行压缩命令，确保路径正确
+	if [ -f $(PKG_BUILD_DIR)/AdGuardHome ]; then \
+		upx --best --lzma $(PKG_BUILD_DIR)/AdGuardHome; \
+		echo "✅ AdGuardHome 二进制通过UPX压缩完成"; \
+	else \
+		echo "❌ AdGuardHome 二进制文件不存在，压缩失败"; \
+		exit 1; \
+	fi
 endef
-
-# 让压缩目标在编译后自动执行（关键：依赖Build/Compile）
-Build/Compile += Build/Compress
 
 $(eval $(call BuildPackage,adguardhome))
 
