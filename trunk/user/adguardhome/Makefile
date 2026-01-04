@@ -8,6 +8,7 @@ PKG_SOURCE_URL:=https://github.com/AdguardTeam/AdGuardHome/archive/refs/tags/
 PKG_SOURCE_URL_FILE:=v$(PKG_VERSION).tar.gz
 PKG_HASH:=f3dde5da6ba48270ac25bd2f501c4ce1af54ddeef93fcd84ef3a8270cec9539f
 
+PATCH:=0
 include $(INCLUDE_DIR)/package.mk
 
 LD_FLAGS:= \
