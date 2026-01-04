@@ -27,11 +27,18 @@ define Build/Compile
 		go build -v -o AdGuardHome \
 		-trimpath -ldflags "$(LD_FLAGS) -s -w -buildid=" \
 		.; \
-		# 移除if判断，直接执行UPX压缩命令，无容错检查
-		upx --best --lzma AdGuardHome; \
-		echo "✅ AdGuardHome 二进制压缩完成"; \
 	)
 endef
+
+# 新增独立目标：单独用于UPX压缩，完全脱离其他阶段
+define Build/Compress
+	# 单独执行压缩命令，无嵌套括号冲突
+	upx --best --lzma $(PKG_BUILD_DIR)/AdGuardHome
+	echo "✅ AdGuardHome 二进制通过独立目标压缩完成"
+endef
+
+# 让压缩目标在编译后自动执行（关键：依赖Build/Compile）
+Build/Compile += Build/Compress
 
 $(eval $(call BuildPackage,adguardhome))
 
