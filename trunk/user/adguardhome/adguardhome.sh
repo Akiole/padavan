@@ -1,179 +1,99 @@
 #!/bin/sh
 
+# 统一核心配置变量（便于后续修改维护）
+ADG_CONF="/etc/storage/AdGuardHome.yaml"
+ADG_TMP_WORK="/tmp/AdGuardHome"
+ADG_STORAGE="/etc/storage/AdGuardHome"
+REDIRECT_PORT="5335"
+DNS_PORT="53"
+
+# 1. 配置 dnsmasq 转发（adg_redirect=1 时生效）
 change_dns() {
-  if [ "$(nvram get adg_redirect)" = 1 ]; then
-    sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-    sed -i '/server=127.0.0.1#5335/d' /etc/storage/dnsmasq/dnsmasq.conf
-    cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+    if [ "$(nvram get adg_redirect)" = 1 ]; then
+        # 先清理旧配置，避免重复添加
+        sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+        sed -i "/server=127.0.0.1#${REDIRECT_PORT}/d" /etc/storage/dnsmasq/dnsmasq.conf
+        # 添加新的DNS转发配置
+        cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
 no-resolv
-server=127.0.0.1#5335
+server=127.0.0.1#${REDIRECT_PORT}
 EOF
-    /sbin/restart_dhcpd
-    logger -t "AdGuardHome" "添加DNS转发到5335端口"
-  fi
+        /sbin/restart_dhcpd
+        logger -t "AdGuardHome" "DNS转发已配置：127.0.0.1#${REDIRECT_PORT}"
+    fi
 }
 
+# 2. 清理 dnsmasq 转发配置
 del_dns() {
-  sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-  sed -i '/server=127.0.0.1#5335/d' /etc/storage/dnsmasq/dnsmasq.conf
-  /sbin/restart_dhcpd
+    sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
+    sed -i "/server=127.0.0.1#${REDIRECT_PORT}/d" /etc/storage/dnsmasq/dnsmasq.conf
+    /sbin/restart_dhcpd
 }
 
-set_iptable()
-{
-  if [ "$(nvram get adg_redirect)" = 2 ]; then
-    IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
-    for IP in $IPS
-    do
-      iptables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-      iptables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-    done
-
-    IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
-    for IP in $IPS
-    do
-      ip6tables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-      ip6tables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-    done
-      logger -t "AdGuardHome" "重定向53端口"
-  fi
-}
-
-clear_iptable()
-{
-        OLD_PORT="5335"
-        IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
-        for IP in $IPS
-        do
-                iptables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-                iptables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+# 3. 设置 iptables 端口重定向（adg_redirect=2 时生效）
+set_iptable() {
+    if [ "$(nvram get adg_redirect)" = 2 ]; then
+        # IPv4 地址重定向
+        local IPS=$(ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}')
+        for IP in $IPS; do
+            iptables -t nat -A PREROUTING -p tcp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+            iptables -t nat -A PREROUTING -p udp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
         done
 
-        IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
-        for IP in $IPS
-        do
-                ip6tables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-                ip6tables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
+        # IPv6 地址重定向
+        local IPS6=$(ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}')
+        for IP in $IPS6; do
+            ip6tables -t nat -A PREROUTING -p tcp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+            ip6tables -t nat -A PREROUTING -p udp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
         done
+
+        logger -t "AdGuardHome" "端口重定向已配置：${DNS_PORT} -> ${REDIRECT_PORT}"
+    fi
 }
 
-getconfig(){
-  adg_file="/etc/storage/AdGuardHome.yaml"
-  if [ ! -f "$adg_file" ] || [ ! -s "$adg_file" ] ; then
-          cat > "$adg_file" <<-\EEE
+# 4. 清理 iptables 端口重定向规则
+clear_iptable() {
+    # 清理 IPv4 规则
+    local IPS=$(ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}')
+    for IP in $IPS; do
+        iptables -t nat -D PREROUTING -p udp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+        iptables -t nat -D PREROUTING -p tcp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+    done
+
+    # 清理 IPv6 规则
+    local IPS6=$(ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}')
+    for IP in $IPS6; do
+        ip6tables -t nat -D PREROUTING -p udp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+        ip6tables -t nat -D PREROUTING -p tcp -d $IP --dport $DNS_PORT -j REDIRECT --to-ports $REDIRECT_PORT >/dev/null 2>&1
+    done
+}
+
+# 5. 生成 AdGuardHome 默认配置文件（无配置/配置为空时自动生成）
+getconfig() {
+    if [ ! -f "$ADG_CONF" ] || [ ! -s "$ADG_CONF" ]; then
+        cat > "$ADG_CONF" <<-\EEE
 http:
-  pprof:
-    port: 6060
-    enabled: false
   address: 0.0.0.0:3030
   session_ttl: 720h
 users:
   - name: AdGuardHome
     password: $2a$10$RV.8NZNelJkpu0yGIQmaOePUc37iTJtkddYGpuHasxqNpyTTodeii
-auth_attempts: 5
-block_auth_min: 15
-http_proxy: ""
 language: zh-cn
 theme: dark
 dns:
-  bind_hosts:
-    - 0.0.0.0
+  bind_hosts: [0.0.0.0]
   port: 5335
-  anonymize_client_ip: false
-  ratelimit: 0
-  ratelimit_subnet_len_ipv4: 24
-  ratelimit_subnet_len_ipv6: 56
-  ratelimit_whitelist: []
   refuse_any: true
-  upstream_dns:
-    - 119.29.29.29
-    - 223.5.5.5
-  upstream_dns_file: ""
-  bootstrap_dns:
-    - 119.29.29.29
-  fallback_dns:
-    - 119.29.29.29
-  upstream_mode: parallel
-  fastest_timeout: 1s
-  allowed_clients: []
-  disallowed_clients: []
-  blocked_hosts:
-    - version.bind
-    - id.server
-    - hostname.bind
-  trusted_proxies:
-    - 127.0.0.0/8
-    - ::1/128
+  upstream_dns: [119.29.29.29, 223.5.5.5]
+  bootstrap_dns: [119.29.29.29]
+  fallback_dns: [119.29.29.29]
   cache_size: 10000
   cache_ttl_min: 60
   cache_ttl_max: 3600
-  cache_optimistic: false
-  bogus_nxdomain: []
-  aaaa_disabled: false
-  enable_dnssec: false
-  edns_client_subnet:
-    custom_ip: ""
-    enabled: false
-    use_custom: false
-  max_goroutines: 300
-  handle_ddr: true
-  ipset: []
-  ipset_file: ""
-  bootstrap_prefer_ipv6: false
-  upstream_timeout: 10s
-  private_networks: []
-  use_private_ptr_resolvers: true
-  local_ptr_upstreams: []
-  use_dns64: false
-  dns64_prefixes: []
-  serve_http3: false
-  use_http3_upstreams: false
-  serve_plain_dns: true
-  hostsfile_enabled: true
-tls:
-  enabled: false
-  server_name: ""
-  force_https: false
-  port_https: 443
-  port_dns_over_tls: 853
-  port_dns_over_quic: 853
-  port_dnscrypt: 0
-  dnscrypt_config_file: ""
-  allow_unencrypted_doh: false
-  certificate_chain: ""
-  private_key: ""
-  certificate_path: ""
-  private_key_path: ""
-  strict_sni_check: false
-querylog:
-  dir_path: ""
-  ignored: []
-  interval: 1h
-  size_memory: 1000
-  enabled: true
-  file_enabled: false
-statistics:
-  dir_path: ""
-  ignored: []
-  interval: 12h
-  enabled: false
-filters:
-  - enabled: false
-    url: https://raw.githubusercontent.com/BlueSkyXN/AdGuardHomeRules/master/skyrules.txt
-    name: Blue
-    id: 1739238283
-  - enabled: false
-    url: https://easylist.to/easylist/easyprivacy.txt
-    name: easyprivacy
-    id: 1739268640
-  - enabled: false
-    url: https://easylist-downloads.adblockplus.org/easylistchina.txt
-    name: easylistchina
-    id: 1739268641
-  - enabled: false
-    url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_11_Mobile/filter.txt
-    name: mobile
-    id: 1739268642
+filtering:
+  protection_enabled: true
+  filtering_enabled: false
+  filters_update_interval: 24
 whitelist_filters:
   - enabled: true
     url: https://raw.githubusercontent.com/BlueSkyXN/AdGuardHomeRules/master/ok.txt
@@ -186,111 +106,56 @@ user_rules:
   - '@@||tangram.e.qq.com^$important'
   - '@@||adsmind.gdtimg.com^$important'
   - '@@||pgdt.gtimg.cn^$important'
-  - ""
 dhcp:
   enabled: false
-  interface_name: ""
-  local_domain_name: lan
-  dhcpv4:
-    gateway_ip: ""
-    subnet_mask: ""
-    range_start: ""
-    range_end: ""
-    lease_duration: 86400
-    icmp_timeout_msec: 1000
-    options: []
-  dhcpv6:
-    range_start: ""
-    lease_duration: 86400
-    ra_slaac_only: false
-    ra_allow_slaac: false
-filtering:
-  blocking_ipv4: ""
-  blocking_ipv6: ""
-  blocked_services:
-    schedule:
-      time_zone: UTC
-    ids: []
-  protection_disabled_until: null
-  safe_search:
-    enabled: false
-    bing: true
-    duckduckgo: true
-    ecosia: true
-    google: true
-    pixabay: true
-    yandex: true
-    youtube: true
-  blocking_mode: default
-  parental_block_host: family-block.dns.adguard.com
-  safebrowsing_block_host: standard-block.dns.adguard.com
-  rewrites: []
-  safe_fs_patterns:
-    - /tmp/userfilters/*
-  safebrowsing_cache_size: 1048576
-  safesearch_cache_size: 1048576
-  parental_cache_size: 1048576
-  cache_time: 30
-  filters_update_interval: 24
-  blocked_response_ttl: 60
-  filtering_enabled: false
-  parental_enabled: false
-  safebrowsing_enabled: false
-  protection_enabled: true
-clients:
-  runtime_sources:
-    whois: true
-    arp: true
-    rdns: true
-    dhcp: true
-    hosts: true
-  persistent: []
 log:
   enabled: true
-  file: ""
-  max_backups: 0
-  max_size: 100
-  max_age: 3
-  compress: false
-  local_time: false
   verbose: false
 os:
-  group: ""
-  user: ""
   rlimit_nofile: 0
 schema_version: 29
 EEE
-          chmod 755 "$adg_file"
-  fi
+        chmod 644 "$ADG_CONF"  # 配置文件无需执行权限，644更安全
+    fi
 }
 
-start_adg(){
-  mkdir -p /tmp/AdGuardHome
-        mkdir -p /etc/storage/AdGuardHome
-        mount -o remount,size=16M /tmp
-        getconfig
-        change_dns
-        set_iptable
-        logger -t "AdGuardHome" "启动 AdGuardHome"
-        eval "AdGuardHome -c $adg_file -w /tmp/AdGuardHome" &
+# 6. 启动 AdGuardHome
+start_adg() {
+    # 创建必要目录 + 调整 tmp 分区大小
+    mkdir -p $ADG_TMP_WORK $ADG_STORAGE
+    mount -o remount,size=16M /tmp >/dev/null 2>&1
+
+    # 初始化配置 + 配置网络规则 + 启动进程
+    getconfig
+    change_dns
+    set_iptable
+    AdGuardHome -c $ADG_CONF -w $ADG_TMP_WORK &
+    logger -t "AdGuardHome" "AdGuardHome 已启动"
 }
 
-stop_adg(){
-  rm -rf /tmp/AdGuardHome
-  logger -t "AdGuardHome" "停止 AdGuardHome"
-  killall -9 AdGuardHome
-  del_dns
-  clear_iptable
+# 7. 停止 AdGuardHome
+stop_adg() {
+    # 停止进程（优先优雅停止，失败则强制终止）
+    killall AdGuardHome >/dev/null 2>&1
+    [ $? -ne 0 ] && killall -9 AdGuardHome >/dev/null 2>&1
+
+    # 清理资源 + 恢复网络配置
+    rm -rf $ADG_TMP_WORK
+    del_dns
+    clear_iptable
+    logger -t "AdGuardHome" "AdGuardHome 已停止"
 }
 
+# 主流程：参数判断
 case $1 in
-start)
+    start)
         start_adg
         ;;
-stop)
+    stop)
         stop_adg
         ;;
-*)
+    *)
         echo "Usage: $0 {start|stop}"
+        exit 1
         ;;
 esac
