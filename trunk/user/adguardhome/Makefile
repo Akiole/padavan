@@ -14,10 +14,10 @@ LD_FLAGS:= \
 	-X github.com/AdguardTeam/AdGuardHome/internal/version.channel=release \
 	-X github.com/AdguardTeam/AdGuardHome/internal/version.version=$(PKG_VERSION)
 
+# 屏蔽补丁后：删除无用的zip -r embed.zip build 步骤，仅保留前端构建
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		NODE_OPTIONS=--openssl-legacy-provider make js-deps js-build; \
-		zip -r embed.zip build; \
 	)
 endef
 
