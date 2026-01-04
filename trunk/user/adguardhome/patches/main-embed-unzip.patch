@@ -6,15 +6,15 @@
  package main
 
  import (
-+	"archive/zip"
-+	"bytes"
- 	"embed"
- 	// Embed tzdata in binary.
- 	//
- 	// See https://github.com/AdguardTeam/AdGuardHome/issues/6758
- 	_ "time/tzdata"
++    "archive/zip"
++    "bytes"
+     "embed"
+     // Embed tzdata in binary.
+     //
+     // See https://github.com/AdguardTeam/AdGuardHome/issues/6758
+     _ "time/tzdata"
 
- 	"github.com/AdguardTeam/AdGuardHome/internal/home"
+     "github.com/AdguardTeam/AdGuardHome/internal/home"
  )
 
 @@ -16,9 +20,16 @@ import (
@@ -26,12 +26,12 @@
 +var b []byte
 
  func main() {
--	home.Main(clientBuildFS)
-+	f, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
-+	if err != nil {
-+		panic(err)
-+	}
+-    home.Main(clientBuildFS)
++    f, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
++    if err != nil {
++        panic(err)
++    }
 +
-+	// Pass the zip reader to home.Main instead of embed.FS
-+	home.Main(f)
++    // Pass the zip reader to home.Main instead of embed.FS
++    home.Main(f)
  }
