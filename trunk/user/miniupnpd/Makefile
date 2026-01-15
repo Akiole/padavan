@@ -8,6 +8,8 @@ PKG_HASH:=fbdd5501039730f04a8420ea2f8f54b7df63f9f04cde2dc67fa7371e80477bbe
 
 include $(INCLUDE_DIR)/package.mk
 
+CONFIGURE_CMD := :
+
 # SRC_DIR=./miniupnpd-2.x
 
 # disable support IPv6 yet, because no profit w/o IGDv2
