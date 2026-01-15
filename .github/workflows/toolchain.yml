@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build ${{ matrix.target }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     strategy:
@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y bison flex gperf help2man texinfo
+          sudo apt-get update && sudo apt-get install -y bison flex gperf help2man libtool-bin texinfo
 
       - name: Build and Package
         run: |
