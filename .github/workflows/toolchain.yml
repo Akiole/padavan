@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y bison flex gperf help2man libtool-bin texinfo
+          sudo apt-get update && sudo apt-get install -y bison flex gperf help2man texinfo
 
       - name: Build and Package
         run: |
