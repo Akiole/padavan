@@ -8,18 +8,13 @@ PKG_HASH:=fbdd5501039730f04a8420ea2f8f54b7df63f9f04cde2dc67fa7371e80477bbe
 
 include $(INCLUDE_DIR)/package.mk
 
-CONFIGURE_CMD := :
-
-# SRC_DIR=./miniupnpd-2.x
+SRC_DIR=./miniupnpd-2.x
 
 # disable support IPv6 yet, because no profit w/o IGDv2
 # e.g. Windows not supported IGDv2 and UPnP not worked
 ENABLE_IPV6:=0
 
 MAKE_FLAGS += \
-	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6)
 
