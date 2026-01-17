@@ -20,7 +20,8 @@ endef
 
 MAKE_FLAGS += \
 	-f Makefile.linux \
-	ENABLE_IPV6=$(ENABLE_IPV6)
+	ENABLE_IPV6=$(ENABLE_IPV6) \
+	miniupnpd
 
 $(eval $(call BuildPackage,miniupnpd))
 
