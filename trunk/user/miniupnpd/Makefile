@@ -18,17 +18,19 @@ define Build/Configure
 	cd $(PKG_BUILD_DIR) && ./configure
 endef
 
-# 仅改动：删除冲突的-Dupnp_time=time，保留所有iptables相关配置
+# 保留所有iptables相关配置，无改动
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
 	IPTABLESPATH=$(IPTABLESPATH) \
 	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc"
 
-# 新增：编译前临时修复upnp_time定义（仅修改源码一行，无其他改动）
+# 仅修改sed命令：先加#include <time.h>，再修复upnp_time实现
 define Build/Prepare
 	$(Build/Prepare/Default)
-	# 修复upnp_time函数声明，避免隐式声明警告，不冲突系统time()
+	# 第一步：在upnputils.h开头添加time.h头文件，解决time()函数声明问题
+	sed -i '1i #include <time.h>' $(PKG_BUILD_DIR)/upnputils.h
+	# 第二步：修复upnp_time函数实现，无类型冲突
 	sed -i 's/^time_t upnp_time(void);/static inline time_t upnp_time(void) { return time(NULL); }/' $(PKG_BUILD_DIR)/upnputils.h
 endef
 
