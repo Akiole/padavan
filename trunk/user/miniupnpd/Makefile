@@ -11,7 +11,8 @@ include $(INCLUDE_DIR)/package.mk
 SRC_DIR=./miniupnpd-2.3.7
 ENABLE_IPV6:=0
 
-IPTABLESPATH=$(ROOTDIR)/user/iptables/iptables-1.8.7
+# 修正：改为实际的iptables编译路径（build目录，不是user目录）
+IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
 
 define Build/Configure
 	cd $(PKG_BUILD_DIR) && ./configure
@@ -21,7 +22,8 @@ MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
 	IPTABLESPATH=$(IPTABLESPATH) \
-	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc"
+	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc" \
+	CFLAGS="-Dupnp_time=time"
 
 $(eval $(call BuildPackage,miniupnpd))
 
