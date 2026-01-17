@@ -14,6 +14,10 @@ SRC_DIR=./miniupnpd-2.3.7
 # e.g. Windows not supported IGDv2 and UPnP not worked
 ENABLE_IPV6:=0
 
+define Build/Configure
+	cd $(PKG_BUILD_DIR) && ./configure
+endef
+
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6)
