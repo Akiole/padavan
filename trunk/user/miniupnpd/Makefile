@@ -18,13 +18,6 @@ ENABLE_IPV6:=0
 # 2. 补丁应用（核心修改：添加2.3.9的4个补丁）
 define Build/Prepare
 	$(Build/Prepare/Default)
-	
-	# 移除2.3.7的upnputils.h修复（2.3.9源码已解决该问题）
-	# 应用2.3.9的4个补丁（需确保补丁文件放在patches目录下）
-	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/default_config.patch
-	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/disable_get_speed.patch
-	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/makefile_linux.patch
-	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/reducing_log.patch
 endef
 
 # 3. 配置阶段升级（适配2.3.9的configure参数）
