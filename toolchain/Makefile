@@ -14,7 +14,8 @@ all: build
 
 build:
 	@echo "\033[1;32m===> 🔧 Starting toolchain build for:\033[0m \033[1;34m$(CT_TARGET)\033[0m"
-	@for dep in bison flex gperf help2man libtool-bin texinfo; do \
+	# 关键修改：移除了 libtool/bin 的检测，保留其他必要依赖
+	@for dep in bison flex gperf help2man texinfo; do \
 		command -v $$dep >/dev/null || { echo "\033[1;31m===> ❌ Missing dependency: $$dep\033[0m"; exit 1; }; \
 	done
 	@if [ ! -f .ct-ng-installed ]; then \
