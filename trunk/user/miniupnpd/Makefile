@@ -1,41 +1,57 @@
 include $(ROOTDIR)/rules.mk
 
+# 1. 基础包信息升级（版本、源码、URL、哈希）
 PKG_NAME:=miniupnpd
-PKG_VERSION:=2.3.7
+PKG_VERSION:=2.3.9
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+# 2.3.9的官方下载URL（兼容原URL，tuxfamily和free.fr都是官方源）
 PKG_SOURCE_URL:=https://miniupnp.tuxfamily.org/files/
-PKG_HASH:=fbdd5501039730f04a8420ea2f8f54b7df63f9f04cde2dc67fa7371e80477bbe
+# 2.3.9的正确SHA256哈希值（必须更新，否则编译校验失败）
+PKG_HASH:=66cb3c3d697ab2bb3a61d3c48628166d6ba328d7c2dbeb95898fdf2a3202af7b
 
 include $(INCLUDE_DIR)/package.mk
 
-SRC_DIR=./miniupnpd-2.3.7
+# 保留原有iptables路径配置
+IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
 ENABLE_IPV6:=0
 
-# 保留你指定的iptables路径
-IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
-
-define Build/Configure
-	cd $(PKG_BUILD_DIR) && ./configure
+# 2. 补丁应用（核心修改：添加2.3.9的4个补丁）
+define Build/Prepare
+	$(Build/Prepare/Default)
+	
+	# 移除2.3.7的upnputils.h修复（2.3.9源码已解决该问题）
+	# 应用2.3.9的4个补丁（需确保补丁文件放在patches目录下）
+	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/default_config.patch
+	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/disable_get_speed.patch
+	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/makefile_linux.patch
+	patch -d $(PKG_BUILD_DIR) -p1 < $(CURDIR)/patches/reducing_log.patch
 endef
 
-# 保留所有iptables配置，无改动
+# 3. 配置阶段升级（适配2.3.9的configure参数）
+define Build/Configure
+	cd $(PKG_BUILD_DIR) && ./configure \
+		--firewall=iptables \
+		--vendorcfg \
+		--portinuse \
+		--leasefile \
+		--disable-pppconn \
+		--disable-tests
+		# 如需启用IPv6，取消注释下面一行
+		# $(if $(CONFIG_IPV6),--ipv6)
+		# 如需启用IGD2，取消注释下面一行
+		# --igd2
+endef
+
+# 4. 编译参数（保留原有iptables配置，无需额外修改）
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
 	IPTABLESPATH=$(IPTABLESPATH) \
 	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc"
 
-# 修正：只补头文件，不修改upnp_time声明（保留原有声明，避免和c文件里的实现冲突）
-define Build/Prepare
-	$(Build/Prepare/Default)
-	# 第一步：在upnputils.h开头添加time.h头文件，解决time()函数声明问题
-	sed -i '1i #include <time.h>' $(PKG_BUILD_DIR)/upnputils.h
-	# 第二步：恢复upnp_time的原始声明（只声明，不实现），避免和c文件里的实现冲突
-	sed -i 's/^static inline time_t upnp_time(void) { return time(NULL); }/time_t upnp_time(void);/' $(PKG_BUILD_DIR)/upnputils.h
-endef
-
 $(eval $(call BuildPackage,miniupnpd))
 
+# 5. 安装阶段（保持原有逻辑不变）
 romfs:
 	$(INSTALL_DIR) $(ROMFSDIR)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/miniupnpd $(ROMFSDIR)/usr/bin/miniupnpd
