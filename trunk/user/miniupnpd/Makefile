@@ -13,7 +13,8 @@ include $(INCLUDE_DIR)/package.mk
 
 # 保留原有iptables路径配置
 IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
-ENABLE_IPV6:=0
+# 修改点1：启用IPv6（从0改为1）
+ENABLE_IPV6:=1
 
 # 2. 补丁应用（核心修改：添加2.3.9的4个补丁）
 define Build/Prepare
@@ -28,11 +29,11 @@ define Build/Configure
 		--portinuse \
 		--leasefile \
 		--disable-pppconn \
-		--disable-tests
-		# 如需启用IPv6，取消注释下面一行
-		# $(if $(CONFIG_IPV6),--ipv6)
+		--disable-tests \
+		# 修改点2：取消--ipv6参数注释，启用IPv6配置
+		--ipv6 \
 		# 如需启用IGD2，取消注释下面一行
-		# --igd2
+		--igd2
 endef
 
 # 4. 编译参数（保留原有iptables配置，无需额外修改）
