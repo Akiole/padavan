@@ -1,0 +1,71 @@
+--- dnsmasq-2.92.orig/src/dnsmasq.c
++++ dnsmasq-2.92/src/dnsmasq.c
+@@ -1075,10 +1075,7 @@
+   /* finished start-up - release original process */
+   if (err_pipe[1] != -1)
+     close(err_pipe[1]);
+-  
+-  if (daemon->port != 0)
+-    check_servers(0);
+-  
++
+   pid = getpid();
+ 
+ #ifdef HAVE_INOTIFY
+@@ -1513,14 +1510,14 @@
+ 	  {
+ 	    if (daemon->resolv_files && option_bool(OPT_NO_POLL))
+ 	      {
+-		reload_servers(daemon->resolv_files->name);
+-		check = 1;
++		if (reload_servers(daemon->resolv_files->name))
++			check = 1;
+ 	      }
+ 
+ 	    if (daemon->servers_file)
+ 	      {
+-		read_servers_file();
+-		check = 1;
++		if (read_servers_file())
++			check = 1;
+ 	      }
+ 
+ 	    if (check)
+--- dnsmasq-2.92.orig/src/dnsmasq.h
++++ dnsmasq-2.92/src/dnsmasq.h
+@@ -1539,7 +1539,7 @@
+ char *option_string(int prot, unsigned int opt, unsigned char *val, 
+ 		    int opt_len, char *buf, int buf_len);
+ void reread_dhcp(void);
+-void read_servers_file(void);
++int read_servers_file(void);
+ void set_option_bool(unsigned int opt);
+ void reset_option_bool(unsigned int opt);
+ struct hostsfile *expand_filelist(struct hostsfile *list);
+--- dnsmasq-2.92.orig/src/option.c
++++ dnsmasq-2.92/src/option.c
+@@ -5831,21 +5831,21 @@
+   return list;
+ }
+ 
+-void read_servers_file(void)
++int read_servers_file(void)
+ {
+   FILE *f;
+ 
+   if (!(f = fopen(daemon->servers_file, "r")))
+     {
+        my_syslog(LOG_ERR, _("cannot read %s: %s"), daemon->servers_file, strerror(errno));
+-       return;
++       return 0;
+     }
+   
+   mark_servers(SERV_FROM_FILE);
+   read_file(daemon->servers_file, f, LOPT_REV_SERV, 0);
+   fclose(f);
+   cleanup_servers();
+-  check_servers(0);
++  return 1;
+ }
+  
+ 
