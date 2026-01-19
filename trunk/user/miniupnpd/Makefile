@@ -11,15 +11,15 @@ include $(INCLUDE_DIR)/package.mk
 
 # 保留原有iptables路径配置
 IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
-# 启用IPv6编译宏
-ENABLE_IPV6:=1
+# 彻底关闭IPv6编译宏
+ENABLE_IPV6:=0
 
 # 2. 补丁应用
 define Build/Prepare
 	$(Build/Prepare/Default)
 endef
 
-# 3. 配置阶段（修正核心问题：续行符+正确参数）
+# 3. 配置阶段：注释--ipv6和--igd2，禁用IPv6和IGD2
 define Build/Configure
 	cd $(PKG_BUILD_DIR) && ./configure \
 		--firewall=iptables \
@@ -28,16 +28,18 @@ define Build/Configure
 		--leasefile \
 		--disable-pppconn \
 		--disable-tests \
-		--ipv6 \
-		--igd2
+		# 注释IPv6参数，禁用IPv6配置
+		# --ipv6 \
+		# 注释IGD2参数，仅启用IGD v1.0
+		# --igd2
 endef
 
-# 4. 编译参数（保留iptables配置，传递IPv6宏）
+# 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
 	IPTABLESPATH=$(IPTABLESPATH) \
-	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc"
+	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc -lip6tc"
 
 $(eval $(call BuildPackage,miniupnpd))
 
