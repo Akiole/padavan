@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/package.mk
 # 保留原有iptables路径配置
 IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
 # 彻底关闭IPv6编译宏
-ENABLE_IPV6:=0
+ENABLE_IPV6:=1
 
 # 2. 补丁应用
 define Build/Prepare
@@ -28,10 +28,8 @@ define Build/Configure
 		--leasefile \
 		--disable-pppconn \
 		--disable-tests \
-		# 注释IPv6参数，禁用IPv6配置
-		# --ipv6 \
-		# 注释IGD2参数，仅启用IGD v1.0
-		# --igd2
+		--ipv6 \
+		--igd2
 endef
 
 # 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc
