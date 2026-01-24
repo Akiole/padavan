@@ -1,17 +1,14 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.8.10
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://www.netfilter.org/pub/iptables/
-PKG_HASH:=5cc255c189356e317d070755ce9371eb63a1b783c34498fb8c30264f3cc59c9c
+PKG_VERSION:=1.8.7
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-# SRC_DIR=./iptables-1.8.7
+SRC_DIR=./iptables-1.8.7
 
 CONFIGURE_ARGS += \
 	--enable-static \
