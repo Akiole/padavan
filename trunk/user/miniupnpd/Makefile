@@ -29,8 +29,7 @@ define Build/Configure
 		--disable-pppconn \
 		--disable-tests \
 		--ipv6 \
-		--igd2 \
-		--pcp
+		--igd2
 endef
 
 # 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc（IPv6必备依赖）
