@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/package.mk
 
 # 保留原有iptables路径配置
 IPTABLESPATH=$(ROOTDIR)/build/iptables-1.8.7
-# 彻底关闭IPv6编译宏
+# 启用IPv6编译宏（双重保障IPv6功能完整生效）
 ENABLE_IPV6:=1
 
 # 2. 补丁应用
@@ -19,7 +19,7 @@ define Build/Prepare
 	$(Build/Prepare/Default)
 endef
 
-# 3. 配置阶段：注释--ipv6和--igd2，禁用IPv6和IGD2
+# 3. 配置阶段：启用--ipv6、--igd2和--pcp，支持IPv6功能和高兼容性协议
 define Build/Configure
 	cd $(PKG_BUILD_DIR) && ./configure \
 		--firewall=iptables \
@@ -29,10 +29,11 @@ define Build/Configure
 		--disable-pppconn \
 		--disable-tests \
 		--ipv6 \
-		--igd2
+		--igd2 \
+		--pcp
 endef
 
-# 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc
+# 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc（IPv6必备依赖）
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
