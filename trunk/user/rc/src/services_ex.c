@@ -760,6 +760,7 @@ start_upnp(void)
 	fprintf(fp, "# automatically generated\n");
 	fprintf(fp,
 		"ext_ifname=%s\n"
+		"ext_ifname6=%s\n"
 		"listening_ip=%s\n"
 		"port=%d\n"
 		"enable_upnp=%s\n"
@@ -771,6 +772,7 @@ start_upnp(void)
 		"lease_file=%s\n"
 		"presentation_url=http://%s/\n"
 		"system_uptime=yes\n"
+		"ext_allow_private_ipv4=yes\n"
 		"notify_interval=%d\n"
 		"clean_ruleset_interval=%d\n"
 		"clean_ruleset_threshold=%d\n"
