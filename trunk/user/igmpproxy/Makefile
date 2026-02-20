@@ -3,9 +3,10 @@ include $(ROOTDIR)/rules.mk
 PKG_NAME:=igmpproxy
 PKG_VERSION:=0.4
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/pali/igmpproxy/releases/download/${PKG_VERSION}/
-PKG_HASH:=afa4b75a823b82f71ce99f33eae4e8136b906ae8a5ede5caaad93bac38cdae24
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/pali/igmpproxy.git
+PKG_SOURCE_VERSION:=eb0aec2a508e21e7d87429ed24b2511a35a6a891
+PKG_MIRROR_HASH:=0149d5f913ac0548887dc462edae59bc8d56e77fc710dc13ec32d4e784b3d25b
 
 PKG_FIXUP:=autoreconf
 
