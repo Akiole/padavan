@@ -126,7 +126,7 @@ subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
 extendedKeyUsage=serverAuth       # 明确服务器认证用途
 keyUsage=digitalSignature, keyEncipherment
-tlsfeature=status_request         # 支持 OCSP 证书吊销校验（现代 TLS 增强）
+# tlsfeature=status_request         # 支持 OCSP 证书吊销校验（现代 TLS 增强）
 
 # 通用双端证书扩展（同时支持客户端+服务器认证）
 [ v3_req ]
@@ -157,25 +157,35 @@ proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo
 # TLS 全局安全配置（系统默认）
 ################################################################################
 [ default_conf ]
-ssl_conf = ssl_sect
+ssl_conf=ssl_sect
+engines=engine_sect  # 新增：关联引擎配置段（启用 devcrypto 关键）
 
 [ssl_sect]
 system_default = system_default_sect
 
 [system_default_sect]
-# TLS 协议范围：禁用 TLS1.0/1.1，仅允许 1.2-1.3（OpenSSL ≥1.1.1 支持）
+# TLS 协议范围（适配 OpenSSL 3.5.5 + MT7621）
 MinProtocol = TLSv1.2
 MaxProtocol = TLSv1.3
 
-# 加密套件：仅保留前向保密+安全算法（适配嵌入式设备，优先 ChaCha20）
-CipherString = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305
-
-# TLS1.3 专属加密套件（OpenSSL ≥1.1.1 支持）
+# 加密套件：优先 MT7621 硬件加速的 AES 算法，兼顾 ChaCha20
+CipherString = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305
+# TLS1.3 套件（精简，适配硬件）
 CipherSuites = TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
-
-# 安全级别 2：拒绝弱密钥（RSA<2048）、弱哈希（SHA1/MD5）
-SECLEVEL = 2
-
-# 优先使用 ChaCha20 算法（低功耗嵌入式设备友好）
+# 安全级别调整：从 2 改为 1（适配嵌入式设备，避免弱算法被过度限制）
+SECLEVEL = 1
+# 优先 ChaCha20（低功耗友好）
 Options = PrioritizeChaCha20
 
+# ====================== devcrypto 硬件加速核心配置 ======================
+[engine_sect]
+devcrypto=devcrypto_sect  # 定义 devcrypto 引擎段
+
+[devcrypto_sect]
+default_algorithms=ALL    # 启用所有硬件加速算法
+USE_SOFTDRIVERS=2         # 硬件不支持时自动回退软件实现
+CIPHERS=ALL               # 启用所有硬件加密算法（AES 等）
+DIGESTS=ALL               # 从 NONE 改为 ALL（MT7621 支持 SHA 硬件加速）
+
+# 可选：指定硬件设备路径（适配路由器）
+# DEVNAME=/dev/crypto
