@@ -13,9 +13,15 @@ OPENSSL_OPTIONS = no-async \
 	no-ec2m no-err no-idea no-rc5 no-rmd160 \
 	no-static-engine no-md2 no-sse2 no-dso no-ts no-mdc2 \
 	no-cast no-whirlpool no-sctp no-srp no-ssl2 no-ssl3 \
-	no-blake2 no-hw-padlock no-aria no-hw \
-	no-devcryptoeng no-ssl3-method no-tests no-sm2 \
+	no-blake2 no-hw-padlock no-aria \
+	no-ssl3-method no-tests no-sm2 \
 	no-sm3 no-sm4 no-afalgeng no-comp
+
+ifdef CONFIG_CRYPTO_DEV_LINUX
+OPENSSL_OPTIONS += enable-devcryptoeng
+else
+OPENSSL_OPTIONS += no-hw no-devcryptoeng
+endif
 
 ifeq (,$(filter y,$(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EC) \
                   $(CONFIG_FIRMWARE_INCLUDE_SMARTDNS)))
