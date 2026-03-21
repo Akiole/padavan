@@ -1,11 +1,11 @@
 include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.39.4
+PKG_VERSION:=2.41.3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.39
-PKG_HASH:=6c4f8723dafd41c39d93ecbf16509fc88c33cd5bd3277880ae5a1d97a014fd0e
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
+PKG_HASH:=3330d873f0fceb5560b89a7dc14e4f3288bbd880e96903ed9b50ec2b5799e58b
 
 PKG_INSTALL:=1
 
@@ -81,6 +81,8 @@ CONFIGURE_ARGS += \
 	--disable-su \
 	--disable-schedutils \
 	--disable-wall \
+	--disable-liblastlog2 \
+	--disable-year2038 \
 	--disable-use-tty-group \
 	--disable-makeinstall-chown \
 	--disable-makeinstall-setuid

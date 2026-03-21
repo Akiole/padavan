@@ -1,4 +1,4 @@
-SRC_NAME=mtd-utils-2.2.0
+SRC_NAME=mtd-utils-2.3.0
 SRC_URL = https://infraroot.at/pub/mtd/$(SRC_NAME).tar.bz2
 
 THISDIR = $(shell pwd)

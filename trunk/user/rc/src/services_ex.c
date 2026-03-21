@@ -771,6 +771,7 @@ start_upnp(void)
 		"lease_file=%s\n"
 		"presentation_url=http://%s/\n"
 		"system_uptime=yes\n"
+		"ext_allow_private_ipv4=yes\n"
 		"notify_interval=%d\n"
 		"clean_ruleset_interval=%d\n"
 		"clean_ruleset_threshold=%d\n"

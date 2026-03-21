@@ -32,6 +32,7 @@ $j(document).ready(function(){
 	init_itoggle('sdns_ip_change');
 	init_itoggle('sdns_dualstack_ip_allow_force_aaaa');
 	init_itoggle('sdns_cache_persist');
+	init_itoggle('sdns_cache_checkpoint_time');
 	init_itoggle('sdns_prefetch_domain');
 	init_itoggle('sdns_force_aaaa_soa');
 	init_itoggle('sdns_force_qtype_soa');
@@ -53,6 +54,7 @@ $j(document).ready(function(){
 	init_itoggle('sdns_ipset_timeout');
 	init_itoggle('sdnse_cache');
 	init_itoggle('sdns_coredump');
+	init_itoggle('sdns_auto_restart');
 	init_itoggle('sdns_black');
 	init_itoggle('sdns_white');
 	init_itoggle('sdns_adblock');
@@ -328,6 +330,12 @@ function showMRULESList(){
                                             </td>
                                         </tr>
 
+                                        <tr> <th width="50%"><#SmartDNS99#></th>
+                                            <td>
+                                                <input type="text" maxlength="15" class="input" size="15" name="sdns_group" style="width: 200px" value="<% nvram_get_x("","sdns_group"); %>" />
+                                            </td>
+                                        </tr>
+
                                         <tr> <th width="50%"><#SmartDNS2#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="sdns_port" style="width: 200px" value="<% nvram_get_x("", "sdns_port"); %>">
@@ -386,6 +394,12 @@ function showMRULESList(){
                                                     <input type="radio" value="1" name="sdns_cache_persist" id="sdns_cache_persist_1" <% nvram_match_x("", "sdns_cache_persist", "1", "checked"); %>><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="sdns_cache_persist" id="sdns_cache_persist_0" <% nvram_match_x("", "sdns_cache_persist", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
+                                            </td>
+                                        </tr>
+										<tr> <th width="50%"><#SmartDNS7_1#></th>
+                                            <td>
+                                                <input type="text" maxlength="64" class="input" size="15" name="sdns_cache_checkpoint_time" style="width: 200px" value="<% nvram_get_x("", "sdns_cache_checkpoint_time"); %>">
+                                                <div><span style="color:#888;"><#SmartDNS7_2#></span></div>
                                             </td>
                                         </tr>
 										<tr> <th width="50%"><#SmartDNS8#></th>
@@ -620,7 +634,7 @@ function showMRULESList(){
                                                 </div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%"><#SmartDNS1#></th>
+										<tr> <th width="50%"><#SmartDNS100#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="sdnse_name" placeholder="default" style="width: 200px" value="<% nvram_get_x("", "sdnse_name"); %>">
 												<div><span style="color:#888;">例如: oversea, office, home</span></div>
@@ -709,7 +723,7 @@ function showMRULESList(){
                                                 </div>
                                             </td>
                                         </tr>
-										<tr> <th width="50%"><#SmartDNS24#></th>
+										<tr> <th width="50%"><#SmartDNS4#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                 <div id="sdnse_ipv6_server_on_of">
@@ -928,6 +942,19 @@ function showMRULESList(){
                                                 </div>
 												<div><span style="color:#888;">此项可配合科学上网来实现大陆IP禁止走国外DNS</span></div>
 												<div><span style="color:#888;">需在上游服务器国外组中开启黑名单过滤[-blacklist-ip]</span></div>
+                                            </td>
+                                        </tr>
+                                        <tr> <th width="50%">异常自动重启</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                <div id="sdns_auto_restart_on_of">
+                                                    <input type="checkbox" id="sdns_auto_restart_fake" <% nvram_match_x("", "sdns_auto_restart", "1", "value=1 checked"); %><% nvram_match_x("", "sdns_auto_restart", "0", "value=0"); %>>
+                                                </div>
+                                                </div>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="sdns_auto_restart" id="sdns_auto_restart_1" <% nvram_match_x("", "sdns_auto_restart", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="sdns_auto_restart" id="sdns_auto_restart_0" <% nvram_match_x("", "sdns_auto_restart", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
 										<tr> <th width="50%">生成coredump</th>

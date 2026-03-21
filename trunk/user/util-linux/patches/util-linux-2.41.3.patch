@@ -1,6 +1,6 @@
-diff -ur util-linux-2.39.4-ref/libblkid/src/partitions/dos.c util-linux-2.39.4/libblkid/src/partitions/dos.c
---- util-linux-2.39.4-ref/libblkid/src/partitions/dos.c	2024-05-29 12:25:26.166835866 +0000
-+++ util-linux-2.39.4/libblkid/src/partitions/dos.c	2024-05-29 12:34:27.029687352 +0000
+diff -ur util-linux-2.41-ref/libblkid/src/partitions/dos.c util-linux-2.41/libblkid/src/partitions/dos.c
+--- util-linux-2.41-ref/libblkid/src/partitions/dos.c	2025-02-26 14:27:07.512597000 +0200
++++ util-linux-2.41/libblkid/src/partitions/dos.c	2025-03-31 15:22:46.542630595 +0300
 @@ -28,10 +28,7 @@
  } dos_nested[] = {
  	{ MBR_FREEBSD_PARTITION, &bsd_pt_idinfo },
@@ -13,10 +13,10 @@ diff -ur util-linux-2.39.4-ref/libblkid/src/partitions/dos.c util-linux-2.39.4/l
  };
  
  static inline int is_extended(struct dos_partition *p)
-diff -ur util-linux-2.39.4-ref/libblkid/src/partitions/partitions.c util-linux-2.39.4/libblkid/src/partitions/partitions.c
---- util-linux-2.39.4-ref/libblkid/src/partitions/partitions.c	2024-05-29 12:25:26.166835866 +0000
-+++ util-linux-2.39.4/libblkid/src/partitions/partitions.c	2024-05-29 12:35:19.321187058 +0000
-@@ -123,19 +123,11 @@
+diff -ur util-linux-2.41-ref/libblkid/src/partitions/partitions.c util-linux-2.41/libblkid/src/partitions/partitions.c
+--- util-linux-2.41-ref/libblkid/src/partitions/partitions.c	2025-02-26 14:27:07.512597000 +0200
++++ util-linux-2.41/libblkid/src/partitions/partitions.c	2025-03-31 15:22:46.544630521 +0300
+@@ -124,19 +124,11 @@
   */
  static const struct blkid_idinfo *idinfos[] =
  {
@@ -37,13 +37,13 @@ diff -ur util-linux-2.39.4-ref/libblkid/src/partitions/partitions.c util-linux-2
  };
  
  /*
-diff -ur util-linux-2.39.4-ref/libblkid/src/superblocks/superblocks.c util-linux-2.39.4/libblkid/src/superblocks/superblocks.c
---- util-linux-2.39.4-ref/libblkid/src/superblocks/superblocks.c	2024-05-29 12:25:26.162835903 +0000
-+++ util-linux-2.39.4/libblkid/src/superblocks/superblocks.c	2024-05-29 12:37:31.843917937 +0000
-@@ -94,89 +94,20 @@
-  */
- static const struct blkid_idinfo *idinfos[] =
- {
+diff -ur util-linux-2.41-ref/libblkid/src/superblocks/superblocks.c util-linux-2.41/libblkid/src/superblocks/superblocks.c
+--- util-linux-2.41-ref/libblkid/src/superblocks/superblocks.c.orig	2025-02-26 14:27:07.515597000 +0200
++++ util-linux-2.41/libblkid/src/superblocks/superblocks.c	2025-03-31 15:22:46.545630483 +0300
+@@ -97,89 +97,20 @@
+ 	/* First, as access to locked OPAL region triggers IO errors */
+ 	&luks_opal_idinfo,
+ 
 -	/* RAIDs */
 -	&linuxraid_idinfo,
 -	&ddfraid_idinfo,
@@ -81,9 +81,9 @@ diff -ur util-linux-2.39.4-ref/libblkid/src/superblocks/superblocks.c util-linux
  	&vfat_idinfo,
  	&swsuspend_idinfo,
  	&swap_idinfo,
- 	&xfs_idinfo,
+-	&xfs_idinfo,
 -	&xfs_log_idinfo,
--	&exfs_idinfo,
+ 	&exfs_idinfo,
  	&ext4dev_idinfo,
  	&ext4_idinfo,
  	&ext3_idinfo,
@@ -130,9 +130,9 @@ diff -ur util-linux-2.39.4-ref/libblkid/src/superblocks/superblocks.c util-linux
  };
  
  /*
-diff -ur util-linux-2.39.4-ref/libblkid/src/topology/topology.c util-linux-2.39.4/libblkid/src/topology/topology.c
---- util-linux-2.39.4-ref/libblkid/src/topology/topology.c	2024-05-29 12:25:26.162835903 +0000
-+++ util-linux-2.39.4/libblkid/src/topology/topology.c	2024-05-29 12:38:03.603613558 +0000
+diff -ur util-linux-2.41-ref/libblkid/src/topology/topology.c util-linux-2.41/libblkid/src/topology/topology.c
+--- util-linux-2.41-ref/libblkid/src/topology/topology.c	2025-02-26 14:27:07.516597000 +0200
++++ util-linux-2.41/libblkid/src/topology/topology.c	2025-03-31 15:22:46.546630446 +0300
 @@ -79,11 +79,7 @@
  {
  #ifdef __linux__
@@ -146,10 +146,10 @@ diff -ur util-linux-2.39.4-ref/libblkid/src/topology/topology.c util-linux-2.39.
  #endif
  };
  
-diff -ur util-linux-2.39.4-ref/sys-utils/setarch.c util-linux-2.39.4/sys-utils/setarch.c
---- util-linux-2.39.4-ref/sys-utils/setarch.c	2024-05-29 12:25:26.302834580 +0000
-+++ util-linux-2.39.4/sys-utils/setarch.c	2024-05-29 12:33:50.074040732 +0000
-@@ -103,7 +103,6 @@
+diff -ur util-linux-2.41-ref/sys-utils/setarch.c util-linux-2.41/sys-utils/setarch.c
+--- util-linux-2.41-ref/sys-utils/setarch.c	2025-02-26 14:27:07.639596000 +0200
++++ util-linux-2.41/sys-utils/setarch.c	2025-03-31 15:22:46.546630446 +0300
+@@ -108,7 +108,6 @@
      X(PER_SUNOS) \
      X(PER_XENIX) \
      X(PER_LINUX32) \
