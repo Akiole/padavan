@@ -728,7 +728,7 @@ start_upnp(void)
 
 	lan_addr = nvram_safe_get("lan_ipaddr");
 	lan_mask = nvram_safe_get("lan_netmask");
-	ip2class(lan_addr, lan_mask, lan_class, sizeof(lan_class));
+//	ip2class(lan_addr, lan_mask, lan_class, sizeof(lan_class));
 	memset(lan_mac, 0, sizeof(lan_mac));
 	ether_atoe(nvram_safe_get("lan_hwaddr"), lan_mac);
 
@@ -786,8 +786,8 @@ start_upnp(void)
 		"serial=%s\n"
 		"bitrate_up=%d\n"
 		"bitrate_down=%d\n"
-		"allow %d-%d %s %d-%d\n"
-		"deny 0-65535 0.0.0.0/0 0-65535\n",
+		"allow %d-%d %s/%s %d-%d\n"
+		"deny 0-65535 0.0.0.0/0.0.0.0 0-65535\n",
 		wan_ifname,
 		IFNAME_BR, /*lan_addr, lan_mask,*/
 		0,
@@ -813,10 +813,11 @@ start_upnp(void)
 		"1.0",
 		100000000,
 		100000000,
-		i_eports[0], i_eports[1], lan_class, i_iports[0], i_iports[1]);
+		i_eports[0], i_eports[1], lan_addr, lan_mask, i_iports[0], i_iports[1]);
 
 	fclose(fp);
 
+	create_file(UPNPD_LEASE_FILE);
 	return eval("/usr/bin/miniupnpd");
 }
 
