@@ -2,10 +2,10 @@ include $(ROOTDIR)/rules.mk
 
 # 1. 版本升级到2.92，配置核心源码信息
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.92
+PKG_VERSION:=2.92rel2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://thekelleys.org.uk/dnsmasq/
-PKG_HASH:=4bf50c2c1018f9fbc26037df51b90ecea0cb73d46162846763b92df0d6c3a458
+PKG_HASH:=43d72b8c129bdf33d17bafedc98823f63e46b5005128066bf0d2a472a32ce06a
 
 include $(INCLUDE_DIR)/package.mk
 
