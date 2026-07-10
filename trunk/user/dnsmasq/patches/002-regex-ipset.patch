@@ -1,0 +1,101 @@
+diff --git a/src/config.h b/src/config.h
+index adfc0d7..7e8081f 100644
+--- a/src/config.h
++++ b/src/config.h
+@@ -206,6 +206,7 @@ RESOLVFILE
+ /* #define HAVE_DNSSEC */
+ /* #define HAVE_NFTSET */
+ /* #define HAVE_REGEX */
++/* #define HAVE_REGEX_IPSET */
+ 
+ /* Default locations for important system files. */
+ 
+@@ -423,7 +424,12 @@ static char *compile_opts =
+ #ifndef HAVE_REGEX
+ "no-"
+ #endif
+-"regex "
++"regex"
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET) && (defined(HAVE_IPSET) || defined(HAVE_NFTSET))
++"(+ipset,nftset) "
++#else
++" "
++#endif
+ #if defined(HAVE_LIBIDN2)
+ "IDN2 "
+ #else
+diff --git a/src/dnsmasq.h b/src/dnsmasq.h
+index f1c1f7b..5c22558 100644
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -696,6 +696,10 @@ struct ipsets {
+   char **sets;
+   char *domain;
+   struct ipsets *next;
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET)
++  PCRE_REGEX *regex;
++  PCRE_REGEX_EXTRA *pextra;
++#endif
+ };
+ 
+ struct allowlist {
+diff --git a/src/forward.c b/src/forward.c
+index 7956df8..c52bda9 100644
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -698,6 +698,12 @@ static struct ipsets *domain_find_sets(struct ipsets *setlist, const char *domai
+   unsigned int matchlen = 0;
+   for (ipset_pos = setlist; ipset_pos; ipset_pos = ipset_pos->next) 
+     {
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET)
++	if (ipset_pos->regex){
++		if (match_regex(ipset_pos->regex, ipset_pos->pextra, daemon->namebuff, namelen))
++			 ret = ipset_pos;
++	}else{
++#endif
+       unsigned int domainlen = strlen(ipset_pos->domain);
+       const char *matchstart = domain + namelen - domainlen;
+       if (namelen >= domainlen && hostname_isequal(matchstart, ipset_pos->domain) &&
+@@ -707,6 +713,9 @@ static struct ipsets *domain_find_sets(struct ipsets *setlist, const char *domai
+           matchlen = domainlen;
+           ret = ipset_pos;
+         }
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET)
++	}
++#endif
+     }
+ 
+   return ret;
+diff --git a/src/option.c b/src/option.c
+index 9a2d45d..06fe183 100644
+--- a/src/option.c
++++ b/src/option.c
+@@ -3229,6 +3229,18 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
+ 	     while ((end = split_chr(arg, '/'))) 
+ 	       {
+ 		 char *domain = NULL;
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET)
++		char *real_end = arg + strlen(arg);
++		if (*arg == ':' && *(real_end - 1) == ':'){
++			const char *error = NULL;
++			*(real_end - 1) = '\0';
++			ipsets->next = opt_malloc(sizeof(struct ipsets));
++			ipsets = ipsets->next;
++			memset(ipsets, 0, sizeof(struct ipsets));
++			if ((error = parse_regex_option(arg + 1, &ipsets->regex, &ipsets->pextra)))
++				ret_err(error);
++		}else{
++#endif
+ 		 /* elide leading dots - they are implied in the search algorithm */
+ 		 while (*arg == '.')
+ 		   arg++;
+@@ -3241,6 +3253,9 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
+ 		 ipsets = ipsets->next;
+ 		 memset(ipsets, 0, sizeof(struct ipsets));
+ 		 ipsets->domain = domain;
++#if defined(HAVE_REGEX) && defined(HAVE_REGEX_IPSET)
++		}
++#endif
+ 		 arg = end;
+ 	       }
+ 	   } 
