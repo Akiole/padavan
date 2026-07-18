@@ -14,7 +14,9 @@ all: build
 
 build:
 	@echo "\033[1;32m===> 🔧 Starting toolchain build for:\033[0m \033[1;34m$(CT_TARGET)\033[0m"
-	# 完全移除所有依赖检测步骤
+	@for dep in bison flex gperf help2man libtool makeinfo; do \
+		command -v $$dep >/dev/null || { echo "\033[1;31m===> ❌ Missing dependency: $$dep\033[0m"; exit 1; }; \
+	done
 	@if [ ! -f .ct-ng-installed ]; then \
 		echo "\033[1;33m===> ⏳ Bootstrapping crosstool-ng...\033[0m"; \
 		./bootstrap && ./configure --enable-local && make || { \
