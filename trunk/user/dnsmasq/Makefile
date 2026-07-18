@@ -1,15 +1,22 @@
 include $(ROOTDIR)/rules.mk
 
+# 1. 版本升级到2.93，配置核心源码信息
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.90
-
+PKG_VERSION:=2.93
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://thekelleys.org.uk/dnsmasq/
-PKG_HASH:=8e50309bd837bfec9649a812e066c09b6988b73d749b7d293c06c57d46a109e4
+PKG_HASH:=0c00d4e5c97c8306e5fb932b348b34269c9c29a0e7df0e8e82958b407092bc19
 
 include $(INCLUDE_DIR)/package.mk
 
+# 2. 定义COPTS：功能禁用宏 + 整合第二段的编译优化参数
 COPTS := -DHAVE_BROKEN_RTC -DNO_INOTIFY -DNO_AUTH -DNO_LOOP
+# 可选：保留-DNO_DUMPFILE -DNO_ID（精简体积），如需完整功能可删除此行
+# COPTS += -DNO_DUMPFILE -DNO_ID
+# 从第二段整合的编译优化参数
+COPTS += -ffunction-sections -fdata-sections -fvisibility=hidden
+
+# 3. 保留原有条件编译逻辑（IPv6/TFTP/IPSET）
 ifndef CONFIG_IPV6
 COPTS += -DNO_IPV6
 endif
@@ -20,15 +27,17 @@ ifneq ($(CONFIG_FIRMWARE_INCLUDE_IPSET),y)
 COPTS += -DNO_IPSET
 endif
 
+# 4. MAKE_FLAGS：将COPTS融入CFLAGS，删除单独传递，补全续行符和链接优化
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
-	COPTS="$(COPTS)" \
+	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(COPTS)" \
+	LDFLAGS="$(TARGET_LDFLAGS) -Wl,--gc-sections" \
 	PREFIX=""
 
+# 5. 生成OpenWRT软件包构建目标
 $(eval $(call BuildPackage,dnsmasq))
 
+# 6. romfs安装逻辑（符合OpenWRT规范，无修改）
 romfs:
 	$(INSTALL_DIR) $(ROMFSDIR)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq $(ROMFSDIR)/usr/sbin/dnsmasq

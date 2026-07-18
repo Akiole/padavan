@@ -1,123 +1,191 @@
+# OpenSSL 核心配置文件
+# 全局配置入口
+openssl_conf = default_conf
+oid_section  = new_oids
 
-oid_section		= new_oids
 [ new_oids ]
+# 自定义 OID 段（暂无自定义，保留空段）
 
+################################################################################
+# CA 核心配置（私有证书颁发机构）
 ################################################################################
 [ ca ]
-default_ca	= CA_default		# The default ca section
+default_ca = CA_default  # 默认使用 CA_default 段的配置
+
+[ CA_default ]
+# CA 工作目录（可自定义，建议保持 /etc/ssl/keys 适配路由器）
+dir           = /etc/ssl/keys
+certs         = $dir/certs        # 已签发证书存储目录
+crl_dir       = $dir/crl          # 证书吊销列表(CRL)目录
+database      = $dir/index        # 证书索引文件（记录签发记录）
+new_certs_dir = $dir/newcerts     # 新签发证书临时目录
+certificate   = $dir/ca.crt       # CA 根证书路径
+serial        = $dir/serial       # 证书序列号文件（初始值建议 01）
+crl           = $dir/crl.pem      # CRL 文件路径
+private_key   = $dir/ca.key       # CA 私钥路径
+RANDFILE      = $dir/private/.rand# 随机数文件（提升密钥随机性）
+x509_extensions = usr_cert        # 默认证书扩展（客户端证书）
+unique_subject = no               # 允许同一主题签发多个证书（如同一域名）
+
+# 证书显示选项
+name_opt      = ca_default
+cert_opt      = ca_default
+
+# 有效期配置（生产环境建议缩短为 365 天，降低私钥泄露风险）
+default_days     = 3653  # 证书默认有效期（10年，可改为 365）
+default_crl_days = 30    # CRL 更新周期（30天）
+default_md       = sha256 # 替换原始 MD5，使用安全的 SHA256 哈希算法
+preserve         = no     # 不保留 DN 字段的传入顺序
+
+policy = policy_match  # 证书签发策略（严格匹配，可改为 policy_anything 宽松策略）
+
+# 严格签发策略：强制匹配国家/组织/邮箱，必填通用名
+[ policy_match ]
+countryName             = match
+stateOrProvinceName     = optional
+organizationName        = match
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = match
+
+# 宽松签发策略：仅必填通用名，其余可选（按需启用）
+[ policy_anything ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
 
 ################################################################################
-[ CA_default ]
-dir		= /etc/ssl/keys		# Where everything is kept
-certs		= $dir/certs		# Where the issued certs are kept
-crl_dir		= $dir/crl		# Where the issued crl are kept
-database	= $dir/index		# database index file.
-new_certs_dir	= $dir/newcerts		# default place for new certs.
-certificate	= $dir/ca.crt		# The CA certificate
-serial		= $dir/serial		# The current serial number
-crl		= $dir/crl.pem		# The current CRL
-private_key	= $dir/ca.key		# The private key
-RANDFILE	= $dir/private/.rand	# private random number file
-x509_extensions	= usr_cert		# The extentions to add to the cert
-unique_subject	= no			# Set to 'no' to allow creation of
-					# several certificates with same subject.
-
-name_opt 	= ca_default		# Subject Name options
-cert_opt 	= ca_default		# Certificate field options
-
-default_days	= 3653			# how long to certify for
-default_crl_days= 30			# how long before next CRL
-default_md	= md5			# which md to use.
-preserve	= no			# keep passed DN ordering
-
-policy		= policy_match
-
-# For the CA policy
-[ policy_match ]
-countryName		= match
-stateOrProvinceName	= optional
-organizationName	= match
-organizationalUnitName	= optional
-commonName		= supplied
-emailAddress		= match
-
-# For the 'anything' policy
-# At this point in time, you must list all acceptable 'object'
-# types.
-[ policy_anything ]
-countryName		= optional
-stateOrProvinceName	= optional
-localityName		= optional
-organizationName	= optional
-organizationalUnitName	= optional
-commonName		= supplied
-emailAddress		= optional
-
-####################################################################
+# 证书请求(CSR)配置
+################################################################################
 [ req ]
-default_bits		= 1024
-default_keyfile 	= ca.key
-distinguished_name	= req_distinguished_name
-attributes		= req_attributes
-x509_extensions		= v3_ca	 # The extentions to add to the self signed cert
+default_bits       = 2048        # RSA 密钥位数（替换原始 1024，提升安全性）
+default_ec_bits    = 256         # 椭圆曲线(EC)密钥位数（更高效，适配嵌入式设备）
+default_keyfile    = ca.key      # 默认私钥文件名
+distinguished_name = req_distinguished_name # 证书主体信息字段
+attributes         = req_attributes          # 可选属性（如挑战密码）
+x509_extensions    = v3_ca       # 自签名 CA 证书的扩展字段
+string_mask        = nombstr     # 字符串格式约束
+default_md         = sha256      # 显式指定 SHA256 哈希算法
 
-string_mask = nombstr
-
+# 证书主体信息（可根据实际场景自定义默认值）
 [ req_distinguished_name ]
-countryName			= Country Name (2 letter code)
-countryName_default		= RU
-countryName_min			= 2
-countryName_max			= 2
-stateOrProvinceName		= State or Province Name (full name)
-stateOrProvinceName_default	= Some-State
-localityName			= Locality Name (eg, city)
-0.organizationName		= Organization Name (eg, company)
-0.organizationName_default	= My RT-N56U Ltd
-organizationalUnitName		= Organizational Unit Name (eg, section)
-commonName			= Common Name (eg, YOUR name)
-commonName_max			= 64
-commonName_default		= admin
-emailAddress			= Email Address
-emailAddress_max		= 64
-emailAddress_default		= admin@my.router
-# SET-ex3			= SET extension number 3
+countryName                 = Country Name (2 letter code)
+countryName_default         = CN          # 改为 RU（原始）/US 等，按需调整
+countryName_min             = 2
+countryName_max             = 2
 
+stateOrProvinceName         = State or Province Name (full name)
+stateOrProvinceName_default = Beijing     # 改为 Some-State（原始），按需调整
+
+localityName                = Locality Name (eg, city)
+localityName_default        = Beijing     # 按需调整
+
+0.organizationName          = Organization Name (eg, company)
+0.organizationName_default  = My RT-N56U Ltd  # 保留原始组织名
+
+organizationalUnitName      = Organizational Unit Name (eg, section)
+organizationalUnitName_default = IT Dept    # 按需调整
+
+commonName                  = Common Name (eg, YOUR name)
+commonName_max              = 64
+commonName_default          = admin       # 服务器证书建议改为路由器IP（如 192.168.1.1）
+
+emailAddress                = Email Address
+emailAddress_max            = 64
+emailAddress_default        = admin@my.router  # 按需调整
+
+# 可选属性（非必填，保留即可）
 [ req_attributes ]
-challengePassword		= A challenge password
-challengePassword_min		= 4
-challengePassword_max		= 20
-unstructuredName		= An optional company name
+challengePassword          = A challenge password
+challengePassword_min      = 4
+challengePassword_max      = 20
+unstructuredName           = An optional company name
 
+################################################################################
+# 证书扩展配置（核心：定义证书用途）
+################################################################################
+# 客户端证书扩展（用于 TLS 客户端认证）
 [ usr_cert ]
 basicConstraints=CA:FALSE
 nsComment="OpenSSL Generated Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
+extendedKeyUsage=clientAuth        # 明确客户端认证用途
+keyUsage=digitalSignature, keyEncipherment  # 约束密钥仅用于签名/加密
 
+# 服务器证书扩展（路由器 HTTPS 等服务端场景）
 [ server ]
 basicConstraints=CA:FALSE
 nsCertType=server
 nsComment="OpenSSL Generated Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
-extendedKeyUsage=serverAuth
+extendedKeyUsage=serverAuth       # 明确服务器认证用途
 keyUsage=digitalSignature, keyEncipherment
+# tlsfeature=status_request         # 支持 OCSP 证书吊销校验（现代 TLS 增强）
 
+# 通用双端证书扩展（同时支持客户端+服务器认证）
 [ v3_req ]
 basicConstraints=CA:FALSE
 keyUsage=nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage=serverAuth,clientAuth
 
+# CA 根证书扩展（仅用于签发下级证书/CRL）
 [ v3_ca ]
 basicConstraints=CA:true
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer:always
+keyUsage=cRLSign, keyCertSign     # 约束 CA 密钥仅用于签名/CRL
 
+# CRL 扩展（证书吊销列表）
 [ crl_ext ]
 authorityKeyIdentifier=keyid:always,issuer:always
 
+# 代理证书扩展（保留，暂无使用）
 [ proxy_cert_ext ]
 basicConstraints=CA:FALSE
 nsComment="OpenSSL Generated Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
 proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo
+
+################################################################################
+# TLS 全局安全配置（系统默认）
+################################################################################
+[ default_conf ]
+ssl_conf=ssl_sect
+engines=engine_sect  # 新增：关联引擎配置段（启用 devcrypto 关键）
+
+[ssl_sect]
+system_default = system_default_sect
+
+[system_default_sect]
+# TLS 协议范围（适配 OpenSSL 3.5.5 + MT7621）
+MinProtocol = TLSv1.2
+MaxProtocol = TLSv1.3
+
+# 加密套件：优先 MT7621 硬件加速的 AES 算法，兼顾 ChaCha20
+CipherString = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305
+# TLS1.3 套件（精简，适配硬件）
+CipherSuites = TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+# 安全级别调整：从 2 改为 1（适配嵌入式设备，避免弱算法被过度限制）
+SECLEVEL = 1
+# 优先 ChaCha20（低功耗友好）
+Options = PrioritizeChaCha20
+
+# ====================== devcrypto 硬件加速核心配置 ======================
+[engine_sect]
+devcrypto=devcrypto_sect  # 定义 devcrypto 引擎段
+
+[devcrypto_sect]
+default_algorithms=ALL    # 启用所有硬件加速算法
+USE_SOFTDRIVERS=2         # 硬件不支持时自动回退软件实现
+CIPHERS=ALL               # 启用所有硬件加密算法（AES 等）
+DIGESTS=ALL               # 从 NONE 改为 ALL（MT7621 支持 SHA 硬件加速）
+
+# 可选：指定硬件设备路径（适配路由器）
+# DEVNAME=/dev/crypto
