@@ -1125,7 +1125,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		}
 	}
 	p_str = nvram_wlan_get(is_aband, "guest_auth_mode");
-	if (!strcmp(p_str, "psk")) {
+	if (!strcmp(p_str, "psk") || !strcmp(p_str, "owe")) {
 		p_str = nvram_wlan_get(is_aband, "guest_crypto");
 		if (!strcmp(p_str, "tkip"))
 			c_val_mbss[1] = "TKIP";
@@ -1617,8 +1617,11 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	p_str = nvram_wlan_get(is_aband, "sta_auth_mode");
 	if (!strcmp(p_str, "psk"))
 	{
-		if (nvram_wlan_get_int(is_aband, "sta_wpa_mode") == 1)
+		int sta_wpa_mode = nvram_wlan_get_int(is_aband, "sta_wpa_mode");
+		if (sta_wpa_mode == 1)
 			fprintf(fp, "ApCliAuthMode=%s\n", "WPAPSK");
+		else if (sta_wpa_mode == 3)
+			fprintf(fp, "ApCliAuthMode=%s\n", "WPA3PSK");
 		else
 			fprintf(fp, "ApCliAuthMode=%s\n", "WPA2PSK");
 		
@@ -1637,7 +1640,15 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		fprintf(fp, "ApCliEncrypType=%s\n", "NONE");
 		fprintf(fp, "ApCliWPAPSK=%s\n", "");
 	}
-
+	
+	//PMF Capbility and required
+	if (i_auth > 2 && i_auth != 5) {
+		i_pmfr = nvram_wlan_get_int(is_aband, "sta_pmf");
+		fprintf(fp, "ApCliPMFMFPC=%d\n", i_pmfr ? 1 : 0);
+		fprintf(fp, "ApCliPMFMFPR=%d\n", (i_pmfr & 2) ? 1 : 0);
+		fprintf(fp, "ApCliPMFSHA256=%d\n", i_pmfr ? 1 : 0);
+	}
+	
 	fprintf(fp, "ApCliDefaultKeyID=%d\n", 0);
 	for (i = 1; i <= 4; i++) {
 		fprintf(fp, "ApCliKey%dType=%d\n", i, 0);
