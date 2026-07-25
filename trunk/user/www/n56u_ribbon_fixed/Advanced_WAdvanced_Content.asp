@@ -80,7 +80,6 @@ function initial(){
 	load_body();
 
 	change_wmm();
-	pmf_handle();
 }
 
 function change_wmm() {
