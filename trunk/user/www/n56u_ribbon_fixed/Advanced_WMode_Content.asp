@@ -452,7 +452,7 @@ function hideClients_Block(){
                                         <tr id="row_apc_2" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
-                                                <select name="rt_sta_crypto" class="input" onChange="change_sta_auth_mode(0);">
+                                                <select name="wl_sta_crypto" class="input" onChange="change_sta_auth_mode(0);">
                                                     <option value="tkip" <% nvram_match_x("", "wl_sta_crypto", "tkip", "selected"); %>>TKIP</option>
                                                     <option value="aes" <% nvram_match_x("", "wl_sta_crypto", "aes", "selected"); %>>AES</option>
                                                 </select>
