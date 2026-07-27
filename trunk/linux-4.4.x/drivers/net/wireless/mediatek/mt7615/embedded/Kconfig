@@ -40,10 +40,10 @@ config TPC_SUPPORT
 	depends on WIFI_DRIVER
 	default y
 
-#config TXRX_STAT_SUPPORT
-#	bool "TxRx Stats Support"
-#	depends on WIFI_DRIVER
-#	default n
+config TXRX_STAT_SUPPORT
+	bool "TxRx Stats Support"
+	depends on WIFI_DRIVER
+	default n
 
 config ICAP_SUPPORT
 	bool "ICAP Support"
@@ -71,13 +71,6 @@ config MT_DFS_SUPPORT
     bool "Dynamic Frequency Selection Support"	
     depends on WIFI_DRIVER
     default y
-
-config DPP_SUPPORT
-	bool "DPP Support"
-	depends on WIFI_DRIVER
-	depends on MT_AP_SUPPORT
-	select DOT11W_PMF_SUPPORT
-	default n
 
 #config WFA_VHT_R2_PF
 #    bool "WFA VHT R2 Plugfest"
@@ -272,10 +265,10 @@ config LINK_TEST_SUPPORT
 	depends on WIFI_DRIVER
 	default y
 	
-#config WIFI_EAP_FEATURE
-#	bool "EAP Feature Support"
-#	depends on WIFI_DRIVER
-#	default y
+config WIFI_EAP_FEATURE
+	bool "EAP Feature Support"
+	depends on WIFI_DRIVER
+	default y
 
 #config LED_CONTROL_SUPPORT
 #	bool "LED Support"
@@ -423,4 +416,3 @@ if CHIP_MT7615E
 		select HDR_TRANS_TX_SUPPORT
 		select HDR_TRANS_RX_SUPPORT
 endif	
-
