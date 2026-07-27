@@ -478,10 +478,10 @@ function hideClients_Block(){
                                         <tr id="row_apc_4" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 27);"><#WLANConfig11b_PMFType_itemname#></a></th>
                                             <td>
-                                                <select name="rt_sta_pmf" class="input" onchange="change_sta_auth_mode();">
-                                                    <option value="0" <% nvram_match_x("", "rt_sta_pmf", "0", "selected"); %>><#PMF_Disabled#></option>
-                                                    <option value="1" <% nvram_match_x("", "rt_sta_pmf", "1", "selected"); %>><#PMF_Capable#></option>
-                                                    <option value="2" <% nvram_match_x("", "rt_sta_pmf", "2", "selected"); %>><#PMF_Mandatory#></option>
+                                                <select name="wl_sta_pmf" class="input" onchange="change_sta_auth_mode();">
+                                                    <option value="0" <% nvram_match_x("", "wl_sta_pmf", "0", "selected"); %>><#PMF_Disabled#></option>
+                                                    <option value="1" <% nvram_match_x("", "wl_sta_pmf", "1", "selected"); %>><#PMF_Capable#></option>
+                                                    <option value="2" <% nvram_match_x("", "wl_sta_pmf", "2", "selected"); %>><#PMF_Mandatory#></option>
                                                 </select>
                                             </td>
                                         </tr>
