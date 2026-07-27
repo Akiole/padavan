@@ -696,7 +696,7 @@ function wl_auth_mode_change(isload) {
 		
 	if (opts[opts.selectedIndex].text == "WPA3-Personal" || opts[opts.selectedIndex].text == "Enhanced Open")
 		document.form.wl_pmf.value = 2;
-	else if (opts[opts.selectedIndex].text == "WPA2-Personal" && document.form.rt_crypto[0].selected == true)
+	else if (opts[opts.selectedIndex].text == "WPA2-Personal" && document.form.wl_crypto[0].selected == true)
 		document.form.wl_pmf.value = 1;
 	else
 		document.form.wl_pmf.value = 0;
@@ -743,7 +743,6 @@ function wl_auth_mode_change(isload) {
             if (algos[i].toLowerCase() == cur)
                 document.form.wl_crypto[i].selected = true;
         }
-    }
 	document.form.wl_pmf.value = 1;
     } else
 	document.form.wl_pmf.value = 0;;
