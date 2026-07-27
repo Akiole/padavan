@@ -379,7 +379,7 @@ function wl_wep_change(){
 	var wep = document.form.wl_wep_x.value;
 
 	if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "owe"){
-		if((mode == "psk" || mode == "owe"){
+		if((mode == "psk" || mode == "owe")
 			$("wl_crypto").style.display = "";
 			
 		if(mode == "psk")
