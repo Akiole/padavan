@@ -761,9 +761,9 @@ start_upnp(void)
 	fprintf(fp,
 		"ext_ifname=%s\n"
 		"listening_ip=%s\n"
-		"port=%d\n"
+		"http_port=%d\n"
 		"enable_upnp=%s\n"
-		"enable_natpmp=%s\n"
+		"enable_pcp_pmp=%s\n"
 		"upnp_forward_chain=%s\n"
 		"upnp_nat_chain=%s\n"
 		"upnp_nat_postrouting_chain=%s\n"
