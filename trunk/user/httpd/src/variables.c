@@ -1306,7 +1306,7 @@
 			{"rt_preamble", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_greenap", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_pmf", "", NULL, EVM_RESTART_WIFI2},
-			{"wl_sta_pmf", "", NULL, EVM_RESTART_WIFI2},
+			{"rt_sta_pmf", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_ldpc", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_stbc", "", NULL, EVM_RESTART_WIFI2},
 			{"rt_sta_ssid", "", NULL, EVM_RESTART_WIFI2},
