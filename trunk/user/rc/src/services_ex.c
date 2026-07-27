@@ -761,7 +761,7 @@ start_upnp(void)
 	fprintf(fp,
 		"ext_ifname=%s\n"
 		"listening_ip=%s\n"
-		"http_port=%d\n"
+		"port=%d\n"
 		"enable_upnp=%s\n"
 		"enable_pcp_pmp=%s\n"
 		"upnp_forward_chain=%s\n"
