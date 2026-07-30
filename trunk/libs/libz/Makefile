@@ -8,7 +8,16 @@ PKG_SOURCE_URL:=https://github.com/madler/zlib/releases/download/v$(PKG_VERSION)
 PKG_HASH:=d7a0654783a4da529d1bb793b7ad9c3318020af77667bcae35f95d0e42a792f3
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/cmake.mk
+
+CONFIGURE_ARGS += \
+	--shared
+
+TARGET_CFLAGS += \
+	-ffunction-sections \
+	-fdata-sections
+
+TARGET_LDFLAGS += \
+	-Wl,--gc-sections
 
 $(eval $(call BuildPackage,zlib))
 
