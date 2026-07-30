@@ -1,0 +1,31 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -369,7 +369,9 @@ macro(export_to_parent_intermediate)
+ # Try to find the current Git hash
+ #
+ 
+-find_package(Git)
++if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
++	find_package(Git)
++endif()
+ if(GIT_EXECUTABLE)
+ 	execute_process(
+ 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+@@ -402,7 +404,7 @@ if(GIT_EXECUTABLE)
+ endif()
+ 
+ if ("${LWS_BUILD_HASH}" STREQUAL "")
+-	set(LWS_BUILD_HASH "unknown")
++	set(LWS_BUILD_HASH "release")
+ endif()
+ 
+ set(PACKAGE "libwebsockets")
+@@ -412,7 +414,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR "4")
+ set(CPACK_PACKAGE_VERSION_MINOR "3")
+ set(CPACK_PACKAGE_VERSION_PATCH_NUMBER "10")
+ 
+-set(CPACK_PACKAGE_VERSION_PATCH "${CPACK_PACKAGE_VERSION_PATCH_NUMBER}-${LWS_BUILD_HASH}")
++set(CPACK_PACKAGE_VERSION_PATCH "${CPACK_PACKAGE_VERSION_PATCH_NUMBER}")
+ set(CPACK_PACKAGE_RELEASE 1)
+ 
+ set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")

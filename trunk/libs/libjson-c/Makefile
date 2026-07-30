@@ -25,4 +25,9 @@ $(eval $(call BuildPackage,json-c))
 
 romfs:
 	$(INSTALL_DIR) $(ROMFSDIR)/lib
-	$(CP) $(PKG_INSTALL_DIR)/lib/libjson-c.so* $(ROMFSDIR)/lib/
+	$(RM) $(ROMFSDIR)/lib/libjson-c.so*
+	$(CP) \
+		$(PKG_INSTALL_DIR)/lib/libjson-c.so \
+		$(PKG_INSTALL_DIR)/lib/libjson-c.so.$(PKG_SOVERSION) \
+		$(PKG_INSTALL_DIR)/lib/libjson-c.so.$(PKG_LIB_VERSION) \
+		$(ROMFSDIR)/lib/

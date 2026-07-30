@@ -415,5 +415,4 @@ if CHIP_MT7615E
 		select DOT11_VHT_AC
 		select HDR_TRANS_TX_SUPPORT
 		select HDR_TRANS_RX_SUPPORT
-endif	
-
+endif
