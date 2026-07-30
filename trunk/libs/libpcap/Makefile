@@ -2,7 +2,6 @@ include $(ROOTDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=1.10.6
-PKG_SOVERSION:=$(firstword $(subst ., ,$(PKG_VERSION)))
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.tcpdump.org/release/
@@ -29,7 +28,6 @@ CONFIGURE_ARGS += \
 	--without-libnl
 
 CONFIGURE_VARS += \
-	PKG_CONFIG=pkg-config \
 	ac_cv_netfilter_can_compile=no
 
 $(eval $(call BuildPackage,libpcap))
