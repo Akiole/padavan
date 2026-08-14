@@ -27,6 +27,8 @@ $j(document).ready(function() {
 	init_itoggle('wl_radio_x', wl_wps_change);
 	init_itoggle('wl_closed', wl_wps_change);
 	init_itoggle('wl_WPS', wl_wps_change);
+	wps_status_poll();
+	setInterval(wps_status_poll, 10000);
 });
 
 </script>
@@ -148,27 +150,51 @@ function domore_create(){
 
 function wps_pbc(){
 	var $button = $j('#btn_connect');
-	$button.button('loading');
+	$button.button('loading');	// spin (teal) via disabled state
 	$j.getJSON('/wps_action.asp',function(response){
+		var idTimeOut;
 		if(response.status == 0) {
-			$button.data('complete-text','Success')
-			       .removeClass('btn-info')
-			       .addClass('btn-success');
+			$j('#wps_status_txt').text('配对中…');
+			// trigger accepted: pairing feedback up to 30s (practical WPS window),
+			// then success (teal) for 2s and reset
+			idTimeOut = setTimeout(function(){
+				clearTimeout(idTimeOut);
+				$button.removeClass('btn-info').addClass('btn-success');
+				$button.button('reset');
+				$button.addClass('wps-done');
+				var idTimeOut2 = setTimeout(function(){
+					clearTimeout(idTimeOut2);
+					$button.removeClass('wps-done')
+					       .removeClass('btn-success')
+					       .removeClass('btn-info')
+					       .addClass('btn-success');
+				}, 2000);
+			}, 30000);
 		} else {
-			$button.data('complete-text','Error')
-			       .removeClass('btn-success')
-			       .addClass('btn-info');
+			$j('#wps_status_txt').text('配对失败');
+			// trigger failed: error (amber) for 2s and reset
+			$button.removeClass('btn-success').addClass('btn-info');
+			idTimeOut = setTimeout(function(){
+				clearTimeout(idTimeOut);
+				$button.button('reset');
+				$button.removeClass('btn-success')
+				       .removeClass('btn-info')
+				       .addClass('btn-success');
+			}, 2000);
 		}
-		$button.button('complete');
-
-                var idTimeOut = setTimeout(function(){
-                    clearTimeout(idTimeOut);
-                    $button.button('reset');
-		    $button.removeClass('btn-success')
-			   .removeClass('btn-info')
-			   .addClass('btn-success');
-                }, 1500);
 	})
+}
+
+function wps_status_poll(){
+	$j.getJSON('/wps_status.asp',function(res){
+		var el = $j('#wps_status_txt');
+		if(!el.length) return;
+		var s = res.status;
+		if(s == 0 || s == 1) el.text('空闲');
+		else if(s == 2) el.text('配对失败');
+		else if(s == 34) el.text('已完成');
+		else if(s >= 3) el.text('配对中…');
+	});
 }
 
 function wl_wps_change(){
@@ -838,12 +864,9 @@ window.onunload  = function(){
   <tr id="wps_button">
     <th width="50%"><#WPSControl#></th>
     <td>
-      <input type="button" id="btn_connect" class="btn btn-success" data-loading-text="WPS" value="<#WPS_Trigger#>" onclick="wps_pbc()" />
+      <button type="button" id="btn_connect" class="btn btn-success btn-wps" title="<#WPS_Trigger#>" onclick="wps_pbc()"></button>
+      <span id="wps_status_txt" style="margin-left:10px;font-size:12px;color:#8FD4EF"></span>
     </td>
-  </tr>
-  <tr>
-    <th width="50%"><#LAN_IP#></th>
-    <td id="LANIP"></td>
   </tr>
   <tr>
     <th><#MAC_Address#></th>
