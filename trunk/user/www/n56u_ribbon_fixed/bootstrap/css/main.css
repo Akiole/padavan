@@ -614,3 +614,138 @@ textarea[readonly] {
     border-radius: 3px 0 0 3px;
 }
 
+/* ===== status badges: semantic colors + unified type ===== */
+.label-success,
+.badge-success {
+    background-color: #0E8F80;
+}
+.badge {
+    font-family: inherit;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+#internetStatus.badge,
+#wl_securitylevel_span.badge,
+#clientNumber.badge {
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 3px;
+    border-radius: 50%;
+    text-align: center;
+}
+#internetStatus.badge-success i.icon-ok {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    font-size: 0;
+    vertical-align: middle;
+    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMiAxMic+PHBhdGggZD0nTTMuMiA1LjQgUTMuOCA3LjggNS42IDcuOSBROC44IDYuNiAxMC40IDMuMCcgZmlsbD0nbm9uZScgc3Ryb2tlPSd3aGl0ZScgc3Ryb2tlLXdpZHRoPScyJyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnLz48L3N2Zz4=") no-repeat center / contain;
+}
+#internetStatus.badge-success i.icon-ok::before {
+    content: none;
+}
+#internetStatus.badge-warning i.icon-minus,
+#internetStatus.badge-important i.icon-remove {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    font-size: 0;
+    vertical-align: middle;
+}
+#internetStatus.badge-warning i.icon-minus {
+    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMiAxMic+PHBhdGggZD0nTTMuMiA2LjQgUTYgNy4wIDguOCA2LjQnIGZpbGw9J25vbmUnIHN0cm9rZT0nd2hpdGUnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJy8+PC9zdmc+") no-repeat center / contain;
+}
+#internetStatus.badge-important i.icon-remove {
+    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMiAxMic+PHBhdGggZD0nTTQuMSA0LjEgUTUuOSA1LjkgNy45IDQuMSBNNy45IDcuOSBRNS45IDYuMSA0LjEgNy45JyBmaWxsPSdub25lJyBzdHJva2U9J3doaXRlJyBzdHJva2Utd2lkdGg9JzInIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgc3Ryb2tlLWxpbmVqb2luPSdyb3VuZCcvPjwvc3ZnPg==") no-repeat center / contain;
+}
+#internetStatus.badge-warning i.icon-minus::before,
+#internetStatus.badge-important i.icon-remove::before {
+    content: none;
+}
+/* ===== WPS circular icon button (one SVG mask + CSS colors) ===== */
+:root {
+    --wps-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSIjMDAwIj48cGF0aCBkPSJNIDUyLjUgMTcuMiBDIDQ1LjIgMTcuMiAzNi44IDIwLjggMzAuNSAyNy4xIEMgMjEuMiAzNi40IDE4LjUgNDkuOCAyMi44IDYxLjUgQyAyMy44IDY0LjIgMjUuNSA2Ny44IDI4LjIgNzEuMiBDIDI5LjUgNzIuOCAzMC44IDcyLjIgMjkuOCA3MC4xIEMgMjYuMiA2Mi44IDI1LjggNTUuMiAyOC4xIDQ3LjggQyAzMS41IDM2LjggNDEuMiAyOS41IDUyLjggMjkuNSBDIDU0LjggMjkuNSA1Ni41IDI5LjggNTYuNSAyNy4yIEMgNTYuNSAyMy41IDU1LjIgMTcuMiA1Mi41IDE3LjIgWiIvPjxwYXRoIGQ9Ik0gNDQuNSAxMS4yIEMgNDQuNSAxMC4yIDQ2LjIgMTAuMiA0Ny41IDExLjUgTCA2MC41IDI0LjUgQyA2MS44IDI1LjggNjEuOCAyNy4yIDYwLjUgMjguNSBMIDQ3LjUgNDEuNSBDIDQ2LjIgNDIuOCA0NC41IDQxLjggNDQuNSA0MC44IFoiLz48cGF0aCBkPSJNIDQ3LjUgODIuOCBDIDU0LjggODIuOCA2My4yIDc5LjIgNjkuNSA3Mi45IEMgNzguOCA2My42IDgxLjUgNTAuMiA3Ny4yIDM4LjUgQyA3Ni4yIDM1LjggNzQuNSAzMi4yIDcxLjggMjguOCBDIDcwLjUgMjcuMiA2OS4yIDI3LjggNzAuMiAyOS45IEMgNzMuOCAzNy4yIDc0LjIgNDQuOCA3MS45IDUyLjIgQyA2OC41IDYzLjIgNTguOCA3MC41IDQ3LjIgNzAuNSBDIDQ1LjIgNzAuNSA0My41IDcwLjIgNDMuNSA3Mi44IEMgNDMuNSA3Ni41IDQ0LjggODIuOCA0Ny41IDgyLjggWiIvPjxwYXRoIGQ9Ik0gNTUuNSA4OC44IEMgNTUuNSA4OS44IDUzLjggODkuOCA1Mi41IDg4LjUgTCAzOS41IDc1LjUgQyAzOC4yIDc0LjIgMzguMiA3Mi44IDM5LjUgNzEuNSBMIDUyLjUgNTguNSBDIDUzLjggNTcuMiA1NS41IDU4LjIgNTUuNSA1OS4yIFoiLz48L2c+PC9zdmc+");
+}
+.btn-wps {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 32px;
+    text-shadow: none;
+    box-shadow: none;
+    background-color: #667795;
+    background-image: none;
+}
+.btn-wps::before,
+input#btn_connect {
+    -webkit-mask-image: var(--wps-mask);
+    mask-image: var(--wps-mask);
+    -webkit-mask-size: 16px 16px;
+    mask-size: 16px 16px;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+.btn-wps::before {
+    content: "";
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+    background-color: #ffffff;
+}
+.btn-wps:hover,
+.btn-wps:focus {
+    box-shadow: none;
+    background-color: #2FA8D8;
+}
+.btn-wps:focus-visible {
+    outline: 2px solid rgba(255,255,255,.55);
+    outline-offset: 2px;
+}
+.btn-wps[disabled],
+.btn-wps.wps-done {
+    background-color: #2FA8D8;
+}
+.btn-wps[disabled]::before {
+    animation: wps-spin 1.2s linear infinite;
+}
+.btn-wps.btn-info {
+    background-color: #E8A33D;
+}
+input#btn_connect {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 0;
+    color: transparent;
+    text-indent: -9999px;
+    text-shadow: none;
+    box-shadow: none;
+    background-color: #ffffff;
+}
+input#btn_connect:hover {
+    box-shadow: 0 0 0 2px rgba(14, 143, 128, 0.45);
+}
+input#btn_connect.disabled,
+input#btn_connect.wps-done {
+    background-color: #0E8F80;
+}
+input#btn_connect.disabled {
+    animation: wps-spin 1.2s linear infinite;
+}
+input#btn_connect.btn-info {
+    background-color: #E8A33D;
+    animation: none;
+}
+@keyframes wps-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
