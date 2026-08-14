@@ -869,6 +869,10 @@ window.onunload  = function(){
     </td>
   </tr>
   <tr>
+    <th width="50%"><#LAN_IP#></th>
+    <td id="LANIP"></td>
+  </tr>
+  <tr>
     <th><#MAC_Address#></th>
     <td id="MAC"></td>
   </tr>
