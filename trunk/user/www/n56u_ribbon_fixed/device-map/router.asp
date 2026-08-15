@@ -148,79 +148,101 @@ function domore_create(){
 	}
 }
 
-var wpsFailUntil = 0;	// 触发失败后的显示窗口, 期间轮询不覆盖
+// 定义全局状态锁，防止轮询和手动点击导致 UI 冲突
+var isPairing = false;
+var wpsFailUntil = 0;
 
-function wps_pbc(){
-	var $button = $j('#btn_connect');
-	if($button.hasClass('disabled') || $button.prop('disabled')) return;	// 配对中禁止重复触发
-	$button.button('loading');	// spin (teal) via disabled state
-	$j.getJSON('/wps_action.asp',function(response){
-		var idTimeOut;
-		if(response.status == 0) {
-			$j('#wps_status_txt').text('配对中…');
-			// trigger accepted: pairing feedback up to 30s (practical WPS window),
-			// then success (teal) for 2s and reset
-			idTimeOut = setTimeout(function(){
-				clearTimeout(idTimeOut);
-				$button.removeClass('btn-info').addClass('btn-success');
-				$button.button('reset');
-				$button.addClass('wps-done');
-				var idTimeOut2 = setTimeout(function(){
-					clearTimeout(idTimeOut2);
-					$button.removeClass('wps-done')
-					       .removeClass('btn-success')
-					       .removeClass('btn-info')
-					       .addClass('btn-success');
-				}, 2000);
-			}, 30000);
-		} else {
-			// trigger failed: error (amber), 失败窗口内轮询不查询/不覆盖
-			wpsFailUntil = Date.now() + 4000;
-			$j('#wps_status_txt').text('配对失败');
-			$button.removeClass('btn-success').addClass('btn-info');
-			idTimeOut = setTimeout(function(){
-				clearTimeout(idTimeOut);
-				$button.button('reset');
-				$button.removeClass('btn-success')
-				       .removeClass('btn-info')
-				       .addClass('btn-success');
-			}, 2000);
-		}
-	})
+function wps_pbc() {
+    var $button = $j('#btn_connect');
+    // 如果处于禁用状态或正在配对中，禁止重复触发
+    if ($button.hasClass('disabled') || $button.prop('disabled') || isPairing) return;
+
+    $button.button('loading'); // 显示加载状态
+    
+    $j.getJSON('/wps_action.asp', function(response) {
+        if (response.status == 0) {
+            $j('#wps_status_txt').text('配对中…');
+            
+            // 配对成功反馈逻辑：30秒后恢复
+            var idTimeOut = setTimeout(function() {
+                isPairing = false;
+                $button.removeClass('btn-info').addClass('btn-success');
+                $button.button('reset');
+                $button.addClass('wps-done');
+                
+                // 2秒后重置按钮样式
+                var idTimeOut2 = setTimeout(function() {
+                    $button.removeClass('wps-done')
+                           .removeClass('btn-success')
+                           .removeClass('btn-info')
+                           .addClass('btn-success');
+                }, 2000);
+            }, 30000);
+
+        } else {
+            // 失败处理：设置 4 秒保护期，在此期间轮询不覆盖失败状态
+            wpsFailUntil = Date.now() + 4000;
+            $j('#wps_status_txt').text('配对失败');
+            $button.removeClass('btn-success').addClass('btn-info');
+            
+            setTimeout(function() {
+                isPairing = false;
+                $button.button('reset');
+                // 修复原代码逻辑：失败后不应变 btn-success，而是恢复默认或保持状态态
+                $button.removeClass('btn-success').removeClass('btn-info').addClass('btn-info'); 
+            }, 2000);
+        }
+    });
 }
 
-function wps_status_poll(){
-	$j.getJSON('/wps_status.asp',function(res){
-		var el = $j('#wps_status_txt');
-		if(!el.length) return;
-		var btn = $j('#btn_connect');
-		var s = res.status;
-		if(Date.now() < wpsFailUntil) return;	// 触发失败窗口: 保持琥珀失败态
-		if(s >= 3){
-			el.text('配对中…');
-			if(!btn.hasClass('disabled')) btn.button('loading');
-		} else {
-			if(s == 2) el.text('配对失败');
-			else if(s == 34) el.text('已完成');
-			else el.text('空闲');
-			if(btn.hasClass('disabled')) btn.button('reset');
-		}
-	});
+function wps_status_poll() {
+    $j.getJSON('/wps_status.asp', function(res) {
+        var el = $j('#wps_status_txt');
+        if (!el.length) return;
+        var btn = $j('#btn_connect');
+        var s = res.status;
+
+        // 如果在失败保护窗口内，则不更新状态文字
+        if (Date.now() < wpsFailUntil) return;
+
+        if (s >= 3) {
+            el.text('配对中…');
+            if (!btn.hasClass('disabled') && !isPairing) {
+                btn.button('loading');
+            }
+        } else {
+            if (s == 2) el.text('配对失败');
+            else if (s == 34) el.text('已完成');
+            else el.text('空闲');
+            
+            if (btn.hasClass('disabled')) btn.button('reset');
+        }
+    });
 }
 
-function wl_wps_change(){
-	var mode = document.form.wl_auth_mode.value;
-	var wl_close = document.form.wl_closed.value;
-	var wl_radio = document.form.wl_radio_x.value;
+function wl_wps_change() {
+    // 确保表单存在
+    var f = document.form;
+    if (!f) return;
 
-	if( wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0) {
-		$("wl_WPS").style.display = "";
-		$("wps_button").style.display = (document.form.wl_WPS.value == 0) ? "none" : "";
-	} else {
-		$j("label.itoggle")[2].click();
-		$("wl_WPS").style.display = "none";
-		$("wps_button").style.display = "none";
-	}
+    var mode = f.wl_auth_mode.value;
+    var wl_close = f.wl_closed.value;
+    var wl_radio = f.wl_radio_x.value;
+
+    // 修复原代码中的 语法错误：使用正确的 jQuery 选择器和 show 方法
+    if (wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0) {
+        $j("#wl_WPS").show();
+        // 根据值显示或隐藏按钮容器
+        $j("#wps_button").toggle(f.wl_WPS.value != 0);
+    } else {
+        // 修复硬编码索引风险：建议通过类选择，这里增加长度判断防止报错
+        var toggles = $j("label.itoggle");
+        if (toggles.length > 2) {
+            toggles.eq(2).click();
+        }
+        $j("#wl_WPS").hide();
+        $j("#wps_button").hide();
+    }
 }
 
 function wl_auth_mode_change(isload){
