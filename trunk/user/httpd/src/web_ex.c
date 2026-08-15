@@ -2387,7 +2387,7 @@ wps_status_hook(int eid, webs_t wp, int argc, char **argv)
     int status = -1; // 默认错误状态
 
     // 使用 popen 直接读取命令输出，避免使用固定临时文件
-    fp = popen("/bin/iwpriv rai0 get_wsc_status 2>&1", "r");
+    fp = popen("/bin/iwpriv rax0 get_wsc_status 2>&1", "r");
     if (fp) {
         while (fgets(buf, sizeof(buf), fp)) {
             if (sscanf(buf, "WSC_Status=%d", &status) == 1) {
