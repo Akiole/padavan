@@ -28,13 +28,12 @@ function nmode_limitation() {
             document.form.wl_auth_mode.selectedIndex = 3;
             document.form.wl_wpa_mode.value = 2;
         }
-        else if (document.form.wl_auth_mode.selectedIndex == 7) {
+        else if (document.form.rt_auth_mode.selectedIndex == 7) {
             alert("<#WLANConfig11n_nmode_limition_hint#>");
-            document.form.wl_auth_mode.selectedIndex = 8;
-        }
-        else if ((document.form.wl_auth_mode.selectedIndex == 9 || document.form.wl_auth_mode.selectedIndex == 5)  && document.form.wl_crypto.selectedIndex == 1) {
+            document.form.rt_auth_mode.selectedIndex = 8;
+        } else if ((document.form.rt_auth_mode.selectedIndex == 9 || document.form.rt_auth_mode.selectedIndex == 5) && (document.form.rt_crypto.selectedIndex == 1)) {
             alert("<#WLANConfig11n_nmode_limition_hint#>");
-            document.form.wl_crypto.selectedIndex = 0;
+            document.form.rt_crypto.selectedIndex = 0;
         }
         wl_auth_mode_change(0);
     }
