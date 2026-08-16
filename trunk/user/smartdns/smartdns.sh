@@ -106,13 +106,15 @@ Read_ini () {
 
 # 文件完整性校验
 Check_md5 () {
-    echo "smartdns：Enter Check_md5"
-    files="$storage_Path/smartdns_*.sh"
-    md5="$storage_Path/smartdns.md5"
-    new_md5="/tmp/smartdns.md5"
-    status=0
-
-    md5sum -b "$files" > "$new_md5"
+    # 【检测某些文件是否变动】
+    echo "smartdns：" "Enter Check_md5"
+    
+    local files="$storage_Path/smartdns_*.sh"
+    local md5="$storage_Path/smartdns.md5"
+    local new_md5="/tmp/smartdns.md5"
+    local status=0
+    
+    md5sum -b "$files" > $new_md5
     if [ -s "$md5" ] ; then
         diff "$md5" "$new_md5" >/dev/null 2>&1
         [ $? -eq 1 ] && status=1
@@ -315,6 +317,7 @@ Get_sdns_conf () {
 
     Get_sdnse_conf
 
+    # 基础配置写入
     echo "cache-size $sdns_cache" >> "$smartdns_tmp_Conf"
     echo "rr-ttl $sdns_rr_ttl" >> "$smartdns_tmp_Conf"
     echo "rr-ttl-min $sdns_rr_ttl_min" >> "$smartdns_tmp_Conf"
@@ -322,19 +325,30 @@ Get_sdns_conf () {
     echo "tcp-idle-time $sdns_tcp_idle_time" >> "$smartdns_tmp_Conf"
     echo "rr-ttl-reply-max $sdns_rr_ttl_reply_max" >> "$smartdns_tmp_Conf"
     echo "max-reply-ip-num $sdns_max_reply_ip_num" >> "$smartdns_tmp_Conf"
-    # echo "force-qtype-SOA $sdns_force_qtype_soa" >> "$smartdns_tmp_Conf"
     echo "speed-check-mode $sdns_speed_mode" >> "$smartdns_tmp_Conf"
+
+    # 双栈与 AAAA 逻辑优化
     if [ "$sdns_ip_change" -eq 1 ]; then
+        # 分支 A：如果开启了双栈模式，只配置双栈
         echo "dualstack-ip-selection yes" >> "$smartdns_tmp_Conf"
         echo "dualstack-ip-selection-threshold $(nvram get sdns_ip_change_time)" >> "$smartdns_tmp_Conf"
-    elif [ "$sdns_force_aaaa_soa" -eq 1 ]; then
-        echo "force-AAAA-SOA yes" >> "$smartdns_tmp_Conf"
+    else
+        # 分支 B：如果没开启双栈模式，才去考虑 SOA 逻辑
+        if [ "$sdns_force_aaaa_soa" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
+            echo "force-AAAA-SOA yes" >> "$smartdns_tmp_Conf"
+        else
+            echo "force-AAAA-SOA no" >> "$smartdns_tmp_Conf"
+        fi
     fi
+
+    # 强制 AAAA 逻辑
     if [ "$sdns_dualstack_ip_allow_force_aaaa" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "dualstack-ip-allow-force-AAAA yes" >> "$smartdns_tmp_Conf"
     else
         echo "dualstack-ip-allow-force-AAAA no" >> "$smartdns_tmp_Conf"
     fi
+
+    # 缓存持久化
     if [ "$sdns_cache_persist" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "cache-persist yes" >> "$smartdns_tmp_Conf"
         echo "cache-file /tmp/smartdns.cache" >> "$smartdns_tmp_Conf"
@@ -342,21 +356,21 @@ Get_sdns_conf () {
     else
         echo "cache-persist no" >> "$smartdns_tmp_Conf"
     fi
+
+    # 其他功能开关处理
     if [ "$sdns_prefetch_domain" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "prefetch-domain yes" >> "$smartdns_tmp_Conf"
     else
         echo "prefetch-domain no" >> "$smartdns_tmp_Conf"
     fi
+
     if [ "$sdns_ipset_timeout" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "ipset-timeout yes" >> "$smartdns_tmp_Conf"
     else
         echo "ipset-timeout no" >> "$smartdns_tmp_Conf"
     fi
-    if [ "$sdns_force_aaaa_soa" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
-        echo "force-AAAA-SOA yes" >> "$smartdns_tmp_Conf"
-    else
-        echo "force-AAAA-SOA no" >> "$smartdns_tmp_Conf"
-    fi
+
+    # 过期解析逻辑 (修复除了重复的判断)
     if [ "$sdns_exp" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "serve-expired yes" >> "$smartdns_tmp_Conf"
         echo "serve-expired-ttl $sdns_exp_ttl" >> "$smartdns_tmp_Conf"
@@ -365,18 +379,19 @@ Get_sdns_conf () {
     else
         echo "serve-expired no" >> "$smartdns_tmp_Conf"
     fi
+
     if [ "$sdns_adblock" -eq 1 ] && [ "$sdns_cache" -gt 0 ]; then
         echo "conf-file /tmp/anti-ad-for-smartdns.conf" >> "$smartdns_tmp_Conf"
     fi
+
     echo "log-level error" >> "$smartdns_tmp_Conf"
 
+    # 上游服务器循环
     listnum=$(nvram get sdns_staticnum_x)
     for i in $(seq 1 "$listnum"); do
         j=$(expr "$i" - 1)
         sdnss_enable=$(nvram get sdnss_enable_x"$j")
-        if [ "$sdnss_enable" -ne 1 ]; then
-            continue
-        fi
+        [ "$sdnss_enable" -ne 1 ] && continue
 
         sdnss_name=$(nvram get sdnss_name_x"$j")
         sdnss_ip=$(nvram get sdnss_ip_x"$j")
@@ -387,20 +402,11 @@ Get_sdns_conf () {
         sdnss_non=$(nvram get sdnss_non_x"$j")
         sdnss_ipset=$(nvram get sdnss_ipset_x"$j")
 
-        ipc=""
-        named=""
-        non=""
-        if [ "$sdnss_ipc" = "whitelist" ]; then
-            ipc="-whitelist-ip"
-        elif [ "$sdnss_ipc" = "blacklist" ]; then
-            ipc="-blacklist-ip"
-        fi
-        if [ -n "$sdnss_named" ]; then
-            named="-group $sdnss_named"
-        fi
-        if [ "$sdnss_non" = "1" ]; then
-            non="-exclude-default-group"
-        fi
+        ipc="" named="" non=""
+        [ "$sdnss_ipc" = "whitelist" ] && ipc="-whitelist-ip"
+        [ "$sdnss_ipc" = "blacklist" ] && ipc="-blacklist-ip"
+        [ -n "$sdnss_named" ] && named="-group $sdnss_named"
+        [ "$sdnss_non" = "1" ] && non="-exclude-default-group"
 
         server_port=""
         if [ "$sdnss_port" = "default" ] || [ -z "$sdnss_port" ]; then
@@ -431,30 +437,34 @@ Get_sdns_conf () {
         fi
     done
 
+    # 黑白名单路由文件处理
     if [ "$sdns_white" = "1" ] && [ -f "$chn_Route" ] && [ -s "$chn_Route" ]; then
-        logger -t "SmartDNS" "开始处理白名单 IP..."
+        logger -t "SmartDNS" "处理白名单 IP..."
         whitelist_conf="/tmp/whitelist.conf"
         :> "$whitelist_conf"
-        awk '{printf("whitelist-ip %s\n", $1)}' "$chn_Route" >> "$whitelist_conf"
+        awk '{printf("whitelist-ip %s\n", $1)}' "$chn_Route" > "$whitelist_conf"
         echo "conf-file $whitelist_conf" >> "$smartdns_tmp_Conf"
     fi
 
     if [ "$sdns_black" = "1" ] && [ -f "$chn_Route" ] && [ -s "$chn_Route" ]; then
-        logger -t "SmartDNS" "开始处理黑名单 IP..."
+        logger -t "SmartDNS" "处理黑名单 IP..."
         blacklist_conf="/tmp/blacklist.conf"
         :> "$blacklist_conf"
-        awk '{printf("blacklist-ip %s\n", $1)}' "$chn_Route" >> "$blacklist_conf"
+        awk '{printf("blacklist-ip %s\n", $1)}' "$chn_Route" > "$blacklist_conf"
         echo "conf-file $blacklist_conf" >> "$smartdns_tmp_Conf"
     fi
 
+    # 合并所有配置
     grep -v '^#' "$smartdns_address_Conf" | grep -v "^$" >> "$smartdns_tmp_Conf"
     grep -v '^#' "$smartdns_blacklist_Conf" | grep -v "^$" >> "$smartdns_tmp_Conf"
     grep -v '^#' "$smartdns_whitelist_Conf" | grep -v "^$" >> "$smartdns_tmp_Conf"
     grep -v '^#' "$smartdns_custom_Conf" | grep -v "^$" >> "$smartdns_tmp_Conf"
 
+    # 强制路由规则
     sed -i '/my.router/d' "$smartdns_tmp_Conf"
     echo "domain-rules /my.router/ -c none -a $IPS4 -d no" >> "$smartdns_tmp_Conf"
 
+    # 去重并生成最终文件
     awk '!x[$0]++' "$smartdns_tmp_Conf" > "$smartdns_Conf"
     rm -f "$smartdns_tmp_Conf"
 }
@@ -490,7 +500,8 @@ Change_adbyby () {
 
 # dnsmasq规则检测
 dnsmasq_rule_exists() {
-    rule="$1"
+    # 使用 local 确保 rule 不会影响全局作用域
+    local rule="$1"
     # 精准匹配整行，忽略前后空格（兼容不同格式的配置）
     grep -qxF "$(echo "$rule" | xargs)" "$dnsmasq_Conf" 2>/dev/null
     return $?
@@ -498,6 +509,13 @@ dnsmasq_rule_exists() {
 
 # 修改dnsmasq配置
 Change_dnsmasq () {
+    # 建议全部加上 local，因为这些变量仅在当前函数内部有效
+    local no_resolv_rule
+    local main_server_rule
+    local second_server_rule
+    local port_rule
+    local action # 如果 action 是从外部传入的，可以不加，但为了安全建议也加上
+
     # 定义SmartDNS相关的dnsmasq规则
     no_resolv_rule="no-resolv"
     main_server_rule="server=127.0.0.1#$sdns_port"
@@ -506,7 +524,7 @@ Change_dnsmasq () {
 
     case "$action" in
         stop)
-            logger -t "SmartDNS" "开始删除dnsmasq中SmartDNS相关规则..."
+            # logger -t "SmartDNS" "开始删除dnsmasq中SmartDNS相关规则..."
             # 步骤1：删除主服务器规则（精准匹配）
             if dnsmasq_rule_exists "$main_server_rule"; then
                 sed -i "/^$(echo "$main_server_rule" | sed 's/\//\\\//g')$/d" "$dnsmasq_Conf"
@@ -531,7 +549,7 @@ Change_dnsmasq () {
             fi
             ;;
         start)
-            logger -t "SmartDNS" "开始添加dnsmasq中SmartDNS相关规则..."
+            # logger -t "SmartDNS" "开始添加dnsmasq中SmartDNS相关规则..."
             # 移除文件末尾换行符和空行分隔的处理步骤
             
             # 步骤1：添加port=0（避免端口冲突，仅当SmartDNS使用53端口时）
@@ -551,17 +569,17 @@ Change_dnsmasq () {
                 # 添加no-resolv（禁用dnsmasq默认上游）
                 if ! dnsmasq_rule_exists "$no_resolv_rule"; then
                     echo "$no_resolv_rule" >> "$dnsmasq_Conf"
-                    logger -t "SmartDNS" "已添加dnsmasq规则：$no_resolv_rule（禁用默认上游解析）"
+                    # logger -t "SmartDNS" "已添加dnsmasq规则：$no_resolv_rule（禁用默认上游解析）"
                 fi
                 # 添加主服务器指向
                 if ! dnsmasq_rule_exists "$main_server_rule"; then
                     echo "$main_server_rule" >> "$dnsmasq_Conf"
-                    logger -t "SmartDNS" "已添加dnsmasq规则：$main_server_rule（指向SmartDNS主服务）"
+                    # logger -t "SmartDNS" "已添加dnsmasq规则：$main_server_rule（指向SmartDNS主服务）"
                 fi
                 # 添加第二服务器指向（若启用）
                 if [ "$sdnse_enable" = 1 ] && ! dnsmasq_rule_exists "$second_server_rule"; then
                     # echo "$second_server_rule" >> "$dnsmasq_Conf"
-                    logger -t "SmartDNS" "已添加dnsmasq规则：$second_server_rule（指向SmartDNS第二服务）"
+                    # logger -t "SmartDNS" "已添加dnsmasq规则：$second_server_rule（指向SmartDNS第二服务）"
                 fi
             fi
             ;;
@@ -570,11 +588,16 @@ Change_dnsmasq () {
 
 # 修改iptables规则
 Change_iptable () {
-    statu=0
+    # 使用 local 声明局部变量
+    local statu=0
+    local table
+    local chain
 
     rule_exists() {
-        table=$1
-        chain=$2
+        # 嵌套函数内部变量也建议使用 local
+        # 这里的 table 和 chain 是传入的
+        local table=$1
+        local chain=$2
         shift 2
         if [ "$table" = "ip6tables" ]; then
             ip6tables -t nat -C $chain "$@" >/dev/null 2>&1
@@ -606,7 +629,8 @@ Change_iptable () {
                     # logger -t "SmartDNS" "已删除ip6tables规则：UDP 53 → $sdns_ported"
                 }
             fi
-            [ "$sdns_enable" = 0 ] && logger -t "SmartDNS" "重定向已清除：恢复默认 DNS 解析"
+            [ "$sdns_enable" = 0 ] && true # logger -t "SmartDNS" "重定向已清除：恢复默认 DNS 解析"
+
 
             if [ "$sdns_redirected" = 1 ]; then
                 rule_exists iptables PREROUTING -p udp -d "$IPS4" --dport 53 -j REDIRECT --to-ports 53 && {
@@ -619,23 +643,23 @@ Change_iptable () {
         start)
             if [ "$sdns_redirected" != 2 ] && [ "$sdns_redirect" = 2 ]; then
                 statu=1
-                logger -t "SmartDNS" "重定向启用：开始添加iptables规则"
+                # logger -t "SmartDNS" "重定向启用：开始添加iptables规则"
                 if [ "$sdnse_enable" = 1 ]; then
-                    logger -t "SmartDNS" "重定向规则：DNS 请求将分发至 $IPS4:$sdns_port（主）和 $IPS4:$sdnse_port（第二）"
+                    # logger -t "SmartDNS" "重定向规则：DNS 请求将分发至 $IPS4:$sdns_port（主）和 $IPS4:$sdnse_port（第二）"
                 else
-                    logger -t "SmartDNS" "重定向规则：DNS 请求将定向至 $IPS4:$sdns_port"
+                    # logger -t "SmartDNS" "重定向规则：DNS 请求将定向至 $IPS4:$sdns_port"
                 fi
             fi
             ;;
 
         reset)
             $0 stop >/dev/null 2>&1
-            logger -t "SmartDNS" "重置iptables规则：先停止现有重定向"
+            # logger -t "SmartDNS" "重置iptables规则：先停止现有重定向"
 
             if [ "$sdns_redirect" = 1 ]; then
                 if ! rule_exists iptables PREROUTING -p udp -d "$IPS4" --dport 53 -j REDIRECT --to-ports 53; then
                     iptables -t nat -A PREROUTING -p udp -d "$IPS4" --dport 53 -j REDIRECT --to-ports 53 >/dev/null 2>&1
-                    logger -t "SmartDNS" "已重置iptables规则：UDP 53 → 53"
+                    # logger -t "SmartDNS" "已重置iptables规则：UDP 53 → 53"
                 fi
             fi
 
@@ -715,7 +739,7 @@ Start_smartdns () {
 
     # 重启dnsmasq（若配置变动）
     if [ "$dnsmasq_md5" != $(md5sum "$dnsmasq_Conf" | awk '{ print $1 }') ]; then
-        logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
+        # logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
         /sbin/restart_dhcpd >/dev/null 2>&1
         logger -t "SmartDNS" "依赖服务重启：dnsmasq 已重启"
     fi
@@ -747,7 +771,7 @@ Start_smartdns () {
         action="stop"
         Stop_smartdns
         if [ "$dnsmasq_md5" != $(md5sum "$dnsmasq_Conf" | awk '{ print $1 }') ]; then
-            logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
+            # logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
             /sbin/restart_dhcpd >/dev/null 2>&1
             logger -t "SmartDNS" "依赖服务重启：dnsmasq 已重启"
         fi
@@ -761,7 +785,7 @@ Start_smartdns () {
 Stop_smartdns () {
     # 停止SmartDNS进程
     killall -9 smartdns >/dev/null 2>&1
-    logger -t "SmartDNS" "停止操作：正在结束 SmartDNS 进程..."
+    # logger -t "SmartDNS" "停止操作：正在结束 SmartDNS 进程..."
 
     # 步骤1：切换adbyby规则回退
     Change_adbyby
@@ -778,7 +802,7 @@ Stop_smartdns () {
 
     # 重启dnsmasq（若配置变动且永久停用）
     if [ "$dnsmasq_md5" != $(md5sum "$dnsmasq_Conf" | awk '{ print $1 }') ] && [ "$sdns_enable" = 0 ]; then
-        logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
+        # logger -t "SmartDNS" "依赖服务重启：dnsmasq 配置已变动，正在重启..."
         /sbin/restart_dhcpd >/dev/null 2>&1
         logger -t "SmartDNS" "依赖服务重启：dnsmasq 已重启"
     fi
@@ -787,7 +811,7 @@ Stop_smartdns () {
     smartdns_process=$(pidof smartdns | awk '{ print $1 }')
     if [ -z "$smartdns_process" ] && [ "$sdns_enable" = 0 ]; then
         rm -f "$smartdns_Ini"
-        logger -t "SmartDNS" "停止完成：SmartDNS 服务器已停用，所有相关规则已清理"
+        # logger -t "SmartDNS" "停止完成：SmartDNS 服务器已停用，所有相关规则已清理"
     fi
 }
 
