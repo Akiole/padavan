@@ -32,8 +32,7 @@ function nmode_limitation() {
         else if (document.form.rt_auth_mode.selectedIndex == 7) {
             alert("<#WLANConfig11n_nmode_limition_hint#>");
             document.form.rt_auth_mode.selectedIndex = 8;
-        } 
-		else if ((document.form.rt_auth_mode.selectedIndex == 9 || document.form.rt_auth_mode.selectedIndex == 5) && (document.form.rt_crypto.selectedIndex == 1)) {
+        } else if ((document.form.rt_auth_mode.selectedIndex == 9 || document.form.rt_auth_mode.selectedIndex == 5) && (document.form.rt_crypto.selectedIndex == 1)) {
             alert("<#WLANConfig11n_nmode_limition_hint#>");
             document.form.rt_crypto.selectedIndex = 0;
         }
@@ -595,110 +594,138 @@ function insertExtChannelOption() {
 
 function rt_auth_mode_change(isload) {
     var mode = document.form.rt_auth_mode.value;
-    var i, cur, algos, opts; // 显式声明变量
+    var i, cur, algos;
 
     inputCtrl(document.form.rt_wep_x, 1);
 
-    /* 1. 基础显示控制 */
+    /* enable/disable crypto algorithm */
     if (mode == "wpa" || mode == "wpa2" || mode == "psk" || mode == "owe") {
         inputCtrl(document.form.rt_crypto, 1);
         $("row_wpa1").style.display = "";
-    } else {
+    }
+    else {
         inputCtrl(document.form.rt_crypto, 0);
         $("row_wpa1").style.display = "none";
     }
 
+    /* enable/disable psk passphrase */
     if (mode == "psk") {
         inputCtrl(document.form.rt_wpa_psk, 1);
         $("row_wpa2").style.display = "";
-    } else {
+    }
+    else {
         inputCtrl(document.form.rt_wpa_psk, 0);
         $("row_wpa2").style.display = "none";
     }
 
-    /* 2. 处理加密算法 (Crypto) 逻辑 */
-    // 先记录当前的加密算法
-    cur = "";
-    for (i = 0; i < document.form.rt_crypto.length; i++) {
-        if (document.form.rt_crypto[i].selected) {
-            cur = document.form.rt_crypto[i].value.toLowerCase();
-            break;
-        }
-    }
-
-    opts = document.form.rt_auth_mode.options;
-    var selectedText = opts[opts.selectedIndex].text;
-
+    /* update rt_crypto */
     if (mode == "psk" || mode == "owe") {
-        if (selectedText == "WPA-Personal") {
-            algos = ["TKIP"];
-        } else if (selectedText == "WPA2-Personal" || selectedText == "WPA3-Personal" || selectedText == "WPA2-WPA3-Mixed" || selectedText == "Enhanced Open") {
-            algos = ["AES"];
-        } else {
-            algos = ["AES", "TKIP+AES"];
-        }
-    } else if (mode == "wpa") {
-        if (selectedText == "WPA-Enterprise") {
-            algos = ["TKIP"];
-        } else {
-            algos = ["AES", "TKIP+AES"];
-        }
-    } else if (mode == "wpa2") {
-        algos = ["AES"];
-    }
-
-    // 重新构建算法列表
-    if (algos) {
-        document.form.rt_crypto.length = algos.length;
-        for (i = 0; i < algos.length; i++) {
-            document.form.rt_crypto[i] = new Option(algos[i], algos[i].toLowerCase());
-            document.form.rt_crypto[i].value = algos[i].toLowerCase();
-            if (algos[i].toLowerCase() == cur) {
-                document.form.rt_crypto[i].selected = true;
+        /* Save current crypto algorithm */
+        for (var i = 0; i < document.form.rt_crypto.length; i++) {
+            if (document.form.rt_crypto[i].selected) {
+                cur = document.form.rt_crypto[i].value;
+                break;
             }
         }
-        // 如果当前加密算法不在新列表里，默认选第一个
-        if (!document.form.rt_crypto[0].selected) {
-            document.form.rt_crypto[0].selected = true;
+
+        opts = document.form.rt_auth_mode.options;
+
+        if (opts[opts.selectedIndex].text == "WPA-Personal")
+            algos = new Array("TKIP");
+        else if (opts[opts.selectedIndex].text == "WPA2-Personal" || opts[opts.selectedIndex].text == "WPA3-Personal" || opts[opts.selectedIndex].text == "WPA2-WPA3-Mixed" || opts[opts.selectedIndex].text == "Enhanced Open")
+            algos = new Array("AES");
+        else
+            algos = new Array("AES", "TKIP+AES");
+
+        /* Reconstruct algorithm array from new crypto algorithms */
+        document.form.rt_crypto.length = algos.length;
+        for (var i in algos) {
+            document.form.rt_crypto[i] = new Option(algos[i], algos[i].toLowerCase());
+            document.form.rt_crypto[i].value = algos[i].toLowerCase();
+
+            if (algos[i].toLowerCase() == cur)
+                document.form.rt_crypto[i].selected = true;
         }
-    }
 
-    /* 3. 处理 PMF (保护管理帧) 逻辑 */
-    if (selectedText == "WPA3-Personal" || selectedText == "Enhanced Open") {
-        document.form.rt_pmf.value = 2; // Required
-    } else if (selectedText == "WPA2-Personal") {
-        // WPA2 只有在开启 AES 时才建议开启 PMF (可选)，这里根据你的需求设为 1 或 0
-        document.form.rt_pmf.value = (document.form.rt_crypto[0].value == "aes") ? 1 : 0;
-    } else {
-        document.form.rt_pmf.value = 0; // Disabled
+	if (opts[opts.selectedIndex].text == "WPA3-Personal" || opts[opts.selectedIndex].text == "Enhanced Open")
+		document.form.rt_pmf.value = 2;
+	else if (opts[opts.selectedIndex].text == "WPA2-Personal" && document.form.rt_crypto[0].selected == true)
+		document.form.rt_pmf.value = 1;
+	else
+		document.form.rt_pmf.value = 0;
     }
+    else if (mode == "wpa") {
+        for (var i = 0; i < document.form.rt_crypto.length; i++) {
+            if (document.form.rt_crypto[i].selected) {
+                cur = document.form.rt_crypto[i].value;
+                break;
+            }
+        }
 
-    /* 4. 处理密钥索引 (Key Index) 逻辑 */
+        opts = document.form.rt_auth_mode.options;
+        if (opts[opts.selectedIndex].text == "WPA-Enterprise")
+            algos = new Array("TKIP");
+        else
+            algos = new Array("AES", "TKIP+AES");
+
+        document.form.rt_crypto.length = algos.length;
+        for (var i in algos) {
+            document.form.rt_crypto[i] = new Option(algos[i], algos[i].toLowerCase());
+            document.form.rt_crypto[i].value = algos[i].toLowerCase();
+
+            if (algos[i].toLowerCase() == cur)
+                document.form.rt_crypto[i].selected = true;
+        }
+	document.form.rt_pmf.value = 0;
+    }
+    else if (mode == "wpa2") {
+        for (var i = 0; i < document.form.rt_crypto.length; i++) {
+            if (document.form.rt_crypto[i].selected) {
+                cur = document.form.rt_crypto[i].value;
+                break;
+            }
+        }
+
+        algos = new Array("AES");
+
+        document.form.rt_crypto.length = algos.length;
+        for (var i in algos) {
+            document.form.rt_crypto[i] = new Option(algos[i], algos[i].toLowerCase());
+            document.form.rt_crypto[i].value = algos[i].toLowerCase();
+
+            if (algos[i].toLowerCase() == cur)
+                document.form.rt_crypto[i].selected = true;
+        }
+	document.form.rt_pmf.value = 1;
+    } else
+	document.form.rt_pmf.value = 0;
+
     change_wep_type(mode, isload);
 
-    // 记录当前索引
-    cur = "";
-    for (i = 0; i < document.form.rt_key.length; i++) {
+    /* Save current network key index */
+    for (var i = 0; i < document.form.rt_key.length; i++) {
         if (document.form.rt_key[i].selected) {
             cur = document.form.rt_key[i].value;
             break;
         }
     }
 
-    if (mode == "wpa" || mode == "wpa2" || mode == "psk" || mode == "radius") {
-        algos = ["2", "3"];
-    } else {
-        algos = ["1", "2", "3", "4"];
-        if (!isload) cur = "1";
+    /* Define new network key indices */
+    if (mode == "wpa" || mode == "wpa2" || mode == "psk" || mode == "radius")
+        algos = new Array("2", "3");
+    else {
+        algos = new Array("1", "2", "3", "4");
+        if (!isload)
+            cur = "1";
     }
 
+    /* Reconstruct network key indices array from new network key indices */
     document.form.rt_key.length = algos.length;
-    for (i = 0; i < algos.length; i++) {
+    for (var i in algos) {
         document.form.rt_key[i] = new Option(algos[i], algos[i]);
         document.form.rt_key[i].value = algos[i];
-        if (algos[i] == cur) {
+        if (algos[i] == cur)
             document.form.rt_key[i].selected = true;
-        }
     }
 
     rt_wep_change();
@@ -756,4 +783,3 @@ function validate_wlkey(key_obj){
 	
 	return iscurrect;
 }
-
