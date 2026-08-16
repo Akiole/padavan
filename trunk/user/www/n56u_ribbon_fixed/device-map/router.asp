@@ -443,7 +443,6 @@ function wl_wep_change(){
 			
 		if(mode == "psk")
 			$("wl_wpa_psk").style.display = "";
-		}
 		
 		//blocking("all_related_wep", 0);
 		$("all_related_wep").style.display = "none";
