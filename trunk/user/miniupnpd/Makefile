@@ -2,10 +2,10 @@ include $(ROOTDIR)/rules.mk
 
 # 1. 基础包信息
 PKG_NAME:=miniupnpd
-PKG_VERSION:=2.3.10
+PKG_VERSION:=2.3.11
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://miniupnp.tuxfamily.org/files/
-PKG_HASH:=f9c34ed3632fb60cd248dd5897bd98479a103a75688b056ca2f069e68ab32987
+PKG_HASH:=91994b127da735b2c97f19992e34420648c0e8c4ace8a4bcb0596e7685c48678
 
 include $(INCLUDE_DIR)/package.mk
 
