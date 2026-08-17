@@ -59,42 +59,83 @@ function RefreshRateSetList(gmode, chg) {
     add_options_x(document.form.WLANConfig11b_DataRate, items, orig);
 }
 
+// 添加在文件头部或 change_common_rt 之前
+function getFormElement(formName, elementId) {
+    var form = document.forms[formName];
+    return form ? form[elementId] : null;
+}
+
+function setFormValue(elementId, value) {
+    var el = getFormElement("form", elementId);
+    if (el) el.value = value;
+}
+
+function focusInput(elementId) {
+    var el = getFormElement("form", elementId);
+    if (el) {
+        el.focus();
+        el.select();
+    }
+}
+
 function change_common_rt(o, s, v) {
     change = 1;
     pageChanged = 1;
     if (v == "rt_auth_mode") {
+        var modeVal = o.value;
+        
+        // 1. 先处理认证模式变更带来的底层逻辑变化
         rt_auth_mode_change(0);
-        if (o.value == "psk" || o.value == "wpa" || o.value == "owe") {
-            opts = document.form.rt_auth_mode.options;
+        
+        if (modeVal == "psk" || modeVal == "wpa" || modeVal == "owe") {
+            var authSelect = getFormElement("form", "rt_auth_mode");
+            var selectedIndex = authSelect ? authSelect.selectedIndex : -1;
+            var selectedText = selectedIndex >= 0 && authSelect.options[selectedIndex] ? authSelect.options[selectedIndex].text : "";
 
-            if (opts[opts.selectedIndex].text == "WPA-Personal") {
-                document.form.rt_wpa_mode.value = "1";
+            if (selectedText == "WPA-Personal") {
+                setFormValue("rt_wpa_mode", "1");
+                // 强制刷新一下，确保 UI 和内部状态同步
+                automode_hint(); 
+            }
+            else if (selectedText == "WPA2-Personal") {
+                setFormValue("rt_wpa_mode", "2");
                 automode_hint();
             }
-            else if (opts[opts.selectedIndex].text == "WPA2-Personal")
-                document.form.rt_wpa_mode.value = "2";
-            else if (opts[opts.selectedIndex].text == "WPA3-Personal")
-                document.form.rt_wpa_mode.value = "5";
-            else if (opts[opts.selectedIndex].text == "WPA-Auto-Personal")
-                document.form.rt_wpa_mode.value = "0";
-            else if (opts[opts.selectedIndex].text == "WPA2-WPA3-Mixed")
-                document.form.rt_wpa_mode.value = "6";
-            else if (opts[opts.selectedIndex].text == "WPA-Enterprise")
-                document.form.rt_wpa_mode.value = "3";
-            else if (opts[opts.selectedIndex].text == "WPA-Auto-Enterprise")
-                document.form.rt_wpa_mode.value = "4";
-            else if (opts[opts.selectedIndex].text == "Enhanced Open")
-                document.form.rt_wpa_mode.value = "7";
+            else if (selectedText == "WPA3-Personal") {
+                setFormValue("rt_wpa_mode", "5");
+                automode_hint();
+            }
+            else if (selectedText == "WPA-Auto-Personal") {
+                setFormValue("rt_wpa_mode", "0");
+                automode_hint();
+            }
+            else if (selectedText == "WPA2-WPA3-Mixed") {
+                setFormValue("rt_wpa_mode", "6");
+                automode_hint();
+            }
+            else if (selectedText == "WPA-Enterprise") {
+                setFormValue("rt_wpa_mode", "3");
+                automode_hint();
+            }
+            else if (selectedText == "WPA-Auto-Enterprise") {
+                setFormValue("rt_wpa_mode", "4");
+                automode_hint();
+            }
+            else if (selectedText == "Enhanced Open") {
+                setFormValue("rt_wpa_mode", "7");
+                automode_hint();
+            }
 
-            if (o.value == "psk") {
-                document.form.rt_wpa_psk.focus();
-                document.form.rt_wpa_psk.select();
+            // 聚焦密码输入框
+            if (modeVal == "psk") {
+                focusInput("rt_wpa_psk");
             }
         }
-        else if (o.value == "shared") {
-            document.form.rt_key1.focus();
-            document.form.rt_key1.select();
+        else if (modeVal == "shared") {
+            focusInput("rt_key1");
         }
+        
+        // 2. 最后重新检查 Nmode 限制和提示，因为底层状态已变
         nmode_limitation();
         automode_hint();
     }
@@ -156,8 +197,8 @@ function change_common_rt(o, s, v) {
 
 function change_wlweptype(o, s, isload) {
     if (o.value == "0") {
-        wflag = 0;
-        wep = "";
+        var wflag = 0;
+        var wep = "";
 
         document.form.rt_key1.value = wep;
         document.form.rt_key2.value = wep;
@@ -165,7 +206,7 @@ function change_wlweptype(o, s, isload) {
         document.form.rt_key4.value = wep;
     }
     else {
-        wflag = 1;
+        var wflag = 1;
 
         if (document.form.rt_phrase_x.value.length > 0 && isload == 0)
             is_wlphrase("WLANConfig11b", "rt_phrase_x", document.form.rt_phrase_x);
@@ -270,10 +311,9 @@ function changeAuthType() {
         inputCtrl(document.form.rt_wep, 1);
         inputCtrl(document.form.rt_phrase_x, 1);
         inputCtrl(document.form.rt_key1, 1);
-        inputCtrl(document.form.rt_key1, 1);
-        inputCtrl(document.form.rt_key1, 1);
-        inputCtrl(document.form.rt_key1, 1);
-        inputCtrl(document.form.rt_key1, 1);
+        inputCtrl(document.form.rt_key2, 1);
+        inputCtrl(document.form.rt_key3, 1);
+        inputCtrl(document.form.rt_key4, 1);
         inputCtrl(document.form.rt_key, 1);
         inputCtrl(document.form.rt_wpa_gtk_rekey, 0);
     }
