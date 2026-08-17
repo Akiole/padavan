@@ -325,6 +325,7 @@ Get_sdns_conf () {
     echo "tcp-idle-time $sdns_tcp_idle_time" >> "$smartdns_tmp_Conf"
     echo "rr-ttl-reply-max $sdns_rr_ttl_reply_max" >> "$smartdns_tmp_Conf"
     echo "max-reply-ip-num $sdns_max_reply_ip_num" >> "$smartdns_tmp_Conf"
+    # echo "force-qtype-SOA $sdns_force_qtype_soa" >> "$smartdns_tmp_Conf"
     echo "speed-check-mode $sdns_speed_mode" >> "$smartdns_tmp_Conf"
 
     # 双栈与 AAAA 逻辑优化
@@ -500,8 +501,7 @@ Change_adbyby () {
 
 # dnsmasq规则检测
 dnsmasq_rule_exists() {
-    # 使用 local 确保 rule 不会影响全局作用域
-    local rule="$1"
+    rule="$1"
     # 精准匹配整行，忽略前后空格（兼容不同格式的配置）
     grep -qxF "$(echo "$rule" | xargs)" "$dnsmasq_Conf" 2>/dev/null
     return $?
@@ -509,13 +509,6 @@ dnsmasq_rule_exists() {
 
 # 修改dnsmasq配置
 Change_dnsmasq () {
-    # 建议全部加上 local，因为这些变量仅在当前函数内部有效
-    local no_resolv_rule
-    local main_server_rule
-    local second_server_rule
-    local port_rule
-    local action # 如果 action 是从外部传入的，可以不加，但为了安全建议也加上
-
     # 定义SmartDNS相关的dnsmasq规则
     no_resolv_rule="no-resolv"
     main_server_rule="server=127.0.0.1#$sdns_port"
@@ -588,16 +581,11 @@ Change_dnsmasq () {
 
 # 修改iptables规则
 Change_iptable () {
-    # 使用 local 声明局部变量
-    local statu=0
-    local table
-    local chain
+    statu=0
 
     rule_exists() {
-        # 嵌套函数内部变量也建议使用 local
-        # 这里的 table 和 chain 是传入的
-        local table=$1
-        local chain=$2
+        table=$1
+        chain=$2
         shift 2
         if [ "$table" = "ip6tables" ]; then
             ip6tables -t nat -C $chain "$@" >/dev/null 2>&1
