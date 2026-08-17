@@ -311,9 +311,10 @@ function changeAuthType() {
         inputCtrl(document.form.rt_wep, 1);
         inputCtrl(document.form.rt_phrase_x, 1);
         inputCtrl(document.form.rt_key1, 1);
-        inputCtrl(document.form.rt_key2, 1);
-        inputCtrl(document.form.rt_key3, 1);
-        inputCtrl(document.form.rt_key4, 1);
+        inputCtrl(document.form.rt_key1, 1);
+        inputCtrl(document.form.rt_key1, 1);
+        inputCtrl(document.form.rt_key1, 1);
+		inputCtrl(document.form.rt_key1, 1);
         inputCtrl(document.form.rt_key, 1);
         inputCtrl(document.form.rt_wpa_gtk_rekey, 0);
     }
