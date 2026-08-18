@@ -2,10 +2,10 @@ include $(ROOTDIR)/rules.mk
 
 # 1. 基础包信息
 PKG_NAME:=miniupnpd
-PKG_VERSION:=2.3.11
+PKG_VERSION:=2.3.10
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://miniupnp.tuxfamily.org/files/
-PKG_HASH:=91994b127da735b2c97f19992e34420648c0e8c4ace8a4bcb0596e7685c48678
+PKG_HASH:=f9c34ed3632fb60cd248dd5897bd98479a103a75688b056ca2f069e68ab32987
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -19,7 +19,7 @@ define Build/Prepare
 	$(Build/Prepare/Default)
 endef
 
-# 3. 配置阶段
+# 3. 配置阶段：注释--ipv6和--igd2，禁用IPv6和IGD2
 define Build/Configure
 	cd $(PKG_BUILD_DIR) && ./configure \
 		--firewall=iptables \
@@ -27,20 +27,19 @@ define Build/Configure
 		--portinuse \
 		--leasefile \
 		--disable-pppconn \
-		--disable-tests
-		# # --ipv6
-		# # --igd2
+		--disable-tests \
+		# 注释IPv6参数，禁用IPv6配置
+		# --ipv6 \
+		# 注释IGD2参数，仅启用IGD v1.0
+		# --igd2
 endef
 
-# 4. 编译参数：修改此处
-# 修改点 A：在 LDFLAGS 中加入 -static 强制静态链接 
-# 修改点 B：确保 LIBS 传递的路径正确
+# 4. 编译参数：改回硬编码的libiptc路径，补充-lip6tc
 MAKE_FLAGS += \
 	-f Makefile.linux \
 	ENABLE_IPV6=$(ENABLE_IPV6) \
 	IPTABLESPATH=$(IPTABLESPATH) \
-	LDFLAGS="-L$(IPTABLESPATH)/libiptc/.libs -static" \
-	LIBS="-lip4tc -lip6tc"
+	LIBS="-L$(IPTABLESPATH)/libiptc/.libs -lip4tc -lip6tc"
 
 $(eval $(call BuildPackage,miniupnpd))
 
