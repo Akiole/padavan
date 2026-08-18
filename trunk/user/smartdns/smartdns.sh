@@ -109,10 +109,10 @@ Check_md5 () {
     # 【检测某些文件是否变动】
     echo "smartdns：" "Enter Check_md5"
     
-    local files="$storage_Path/smartdns_*.sh"
-    local md5="$storage_Path/smartdns.md5"
-    local new_md5="/tmp/smartdns.md5"
-    local status=0
+    files="$storage_Path/smartdns_*.sh"
+    md5="$storage_Path/smartdns.md5"
+    new_md5="/tmp/smartdns.md5"
+    status=0
     
     md5sum -b "$files" > $new_md5
     if [ -s "$md5" ] ; then
@@ -392,7 +392,9 @@ Get_sdns_conf () {
     for i in $(seq 1 "$listnum"); do
         j=$(expr "$i" - 1)
         sdnss_enable=$(nvram get sdnss_enable_x"$j")
-        [ "$sdnss_enable" -ne 1 ] && continue
+        if [ "$sdnss_enable" -ne 1 ]; then
+            continue
+        fi
 
         sdnss_name=$(nvram get sdnss_name_x"$j")
         sdnss_ip=$(nvram get sdnss_ip_x"$j")
@@ -403,11 +405,20 @@ Get_sdns_conf () {
         sdnss_non=$(nvram get sdnss_non_x"$j")
         sdnss_ipset=$(nvram get sdnss_ipset_x"$j")
 
-        ipc="" named="" non=""
-        [ "$sdnss_ipc" = "whitelist" ] && ipc="-whitelist-ip"
-        [ "$sdnss_ipc" = "blacklist" ] && ipc="-blacklist-ip"
-        [ -n "$sdnss_named" ] && named="-group $sdnss_named"
-        [ "$sdnss_non" = "1" ] && non="-exclude-default-group"
+        ipc=""
+        named=""
+        non=""
+        if [ "$sdnss_ipc" = "whitelist" ]; then
+            ipc="-whitelist-ip"
+        elif [ "$sdnss_ipc" = "blacklist" ]; then
+            ipc="-blacklist-ip"
+        fi
+        if [ -n "$sdnss_named" ]; then
+            named="-group $sdnss_named"
+        fi
+        if [ "$sdnss_non" = "1" ]; then
+            non="-exclude-default-group"
+        fi
 
         server_port=""
         if [ "$sdnss_port" = "default" ] || [ -z "$sdnss_port" ]; then
@@ -440,18 +451,18 @@ Get_sdns_conf () {
 
     # 黑白名单路由文件处理
     if [ "$sdns_white" = "1" ] && [ -f "$chn_Route" ] && [ -s "$chn_Route" ]; then
-        logger -t "SmartDNS" "处理白名单 IP..."
+        logger -t "SmartDNS" "开始处理白名单 IP..."
         whitelist_conf="/tmp/whitelist.conf"
         :> "$whitelist_conf"
-        awk '{printf("whitelist-ip %s\n", $1)}' "$chn_Route" > "$whitelist_conf"
+        awk '{printf("whitelist-ip %s\n", $1)}' "$chn_Route" >> "$whitelist_conf"
         echo "conf-file $whitelist_conf" >> "$smartdns_tmp_Conf"
     fi
 
     if [ "$sdns_black" = "1" ] && [ -f "$chn_Route" ] && [ -s "$chn_Route" ]; then
-        logger -t "SmartDNS" "处理黑名单 IP..."
+        logger -t "SmartDNS" "开始处理黑名单 IP..."
         blacklist_conf="/tmp/blacklist.conf"
         :> "$blacklist_conf"
-        awk '{printf("blacklist-ip %s\n", $1)}' "$chn_Route" > "$blacklist_conf"
+        awk '{printf("blacklist-ip %s\n", $1)}' "$chn_Route" >> "$blacklist_conf"
         echo "conf-file $blacklist_conf" >> "$smartdns_tmp_Conf"
     fi
 
@@ -517,7 +528,7 @@ Change_dnsmasq () {
 
     case "$action" in
         stop)
-            # logger -t "SmartDNS" "开始删除dnsmasq中SmartDNS相关规则..."
+            logger -t "SmartDNS" "开始删除dnsmasq中SmartDNS相关规则..."
             # 步骤1：删除主服务器规则（精准匹配）
             if dnsmasq_rule_exists "$main_server_rule"; then
                 sed -i "/^$(echo "$main_server_rule" | sed 's/\//\\\//g')$/d" "$dnsmasq_Conf"
@@ -542,7 +553,7 @@ Change_dnsmasq () {
             fi
             ;;
         start)
-            # logger -t "SmartDNS" "开始添加dnsmasq中SmartDNS相关规则..."
+            logger -t "SmartDNS" "开始添加dnsmasq中SmartDNS相关规则..."
             # 移除文件末尾换行符和空行分隔的处理步骤
             
             # 步骤1：添加port=0（避免端口冲突，仅当SmartDNS使用53端口时）
@@ -631,7 +642,7 @@ Change_iptable () {
         start)
             if [ "$sdns_redirected" != 2 ] && [ "$sdns_redirect" = 2 ]; then
                 statu=1
-                # logger -t "SmartDNS" "重定向启用：开始添加iptables规则"
+                logger -t "SmartDNS" "重定向启用：开始添加iptables规则"
                 if [ "$sdnse_enable" = 1 ]; then
                     # logger -t "SmartDNS" "重定向规则：DNS 请求将分发至 $IPS4:$sdns_port（主）和 $IPS4:$sdnse_port（第二）"
                 else
@@ -642,7 +653,7 @@ Change_iptable () {
 
         reset)
             $0 stop >/dev/null 2>&1
-            # logger -t "SmartDNS" "重置iptables规则：先停止现有重定向"
+            logger -t "SmartDNS" "重置iptables规则：先停止现有重定向"
 
             if [ "$sdns_redirect" = 1 ]; then
                 if ! rule_exists iptables PREROUTING -p udp -d "$IPS4" --dport 53 -j REDIRECT --to-ports 53; then
@@ -799,7 +810,7 @@ Stop_smartdns () {
     smartdns_process=$(pidof smartdns | awk '{ print $1 }')
     if [ -z "$smartdns_process" ] && [ "$sdns_enable" = 0 ]; then
         rm -f "$smartdns_Ini"
-        # logger -t "SmartDNS" "停止完成：SmartDNS 服务器已停用，所有相关规则已清理"
+        logger -t "SmartDNS" "停止完成：SmartDNS 服务器已停用，所有相关规则已清理"
     fi
 }
 
