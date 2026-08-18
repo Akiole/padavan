@@ -2382,24 +2382,22 @@ exit:
 static int
 wps_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
-    FILE *fp = NULL;
-    char buf[128];
-    int status = -1; // 默认错误状态
+	FILE *fp = NULL;
+	char buf[128];
+	int status = -1;
 
-    // 使用 popen 直接读取命令输出，避免使用固定临时文件
-    fp = popen("/bin/iwpriv rax0 get_wsc_status 2>&1", "r");
-    if (fp) {
-        while (fgets(buf, sizeof(buf), fp)) {
-            if (sscanf(buf, "WSC_Status=%d", &status) == 1) {
-                break;
-            }
-        }
-        pclose(fp);
-    }
-
-    // 如果 status 未被赋值，说明解析失败或命令未执行
-    websWrite(wp, "{\"status\": %d}", status);
-    return 0;
+	doSystem("/bin/iwpriv %s get_wsc_status > /tmp/wsc_status 2>&1", IFNAME_5G_MAIN);
+	fp = fopen("/tmp/wsc_status", "r");
+	if (fp) {
+		while (fgets(buf, sizeof(buf), fp)) {
+			char *p = strstr(buf, "WSC_Status=");
+			if (p && sscanf(p, "WSC_Status=%d", &status) == 1)
+				break;
+		}
+		fclose(fp);
+	}
+	websWrite(wp, "{\"status\": %d}", status);
+	return 0;
 }
 
 static int
