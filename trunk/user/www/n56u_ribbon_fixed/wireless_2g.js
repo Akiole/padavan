@@ -84,7 +84,7 @@ function change_common_rt(o, s, v) {
     if (v == "rt_auth_mode") {
         var modeVal = o.value;
         
-        // 1. 先处理认证模式变更带来的底层逻辑变化
+        // 1. 先处理认证模式变更带来的底层逻辑变化（我移除了function rt_auth_mode_change(isload)里else if (mode == "wpa2")的pmf判断，默认pmf为0，如果从wpa3能切换回wpa2，证明该原因不在这里，需要查看无线驱动。如果他人想要修复请参考：https://github.com/soulherats/wr1200js_router，是该开发者在3.4内核加入的wpa3）
         rt_auth_mode_change(0);
         
         if (modeVal == "psk" || modeVal == "wpa" || modeVal == "owe") {
@@ -92,38 +92,21 @@ function change_common_rt(o, s, v) {
             var selectedIndex = authSelect ? authSelect.selectedIndex : -1;
             var selectedText = selectedIndex >= 0 && authSelect.options[selectedIndex] ? authSelect.options[selectedIndex].text : "";
 
-            if (selectedText == "WPA-Personal") {
-                setFormValue("rt_wpa_mode", "1");
-                // 强制刷新一下，确保 UI 和内部状态同步
+            // 映射关系表
+            var wpaMode = "";
+            if (selectedText == "WPA-Personal") wpaMode = "1";
+            else if (selectedText == "WPA2-Personal") wpaMode = "2";
+            else if (selectedText == "WPA3-Personal") wpaMode = "5";
+            else if (selectedText == "WPA-Auto-Personal") wpaMode = "0";
+            else if (selectedText == "WPA2-WPA3-Mixed") wpaMode = "6";
+            else if (selectedText == "WPA-Enterprise") wpaMode = "3";
+            else if (selectedText == "WPA-Auto-Enterprise") wpaMode = "4";
+            else if (selectedText == "Enhanced Open") wpaMode = "7";
+
+            if (wpaMode !== "") {
+                setFormValue("rt_wpa_mode", wpaMode);
+                // 关键：在这里每次赋值后立即调用 hint，确保 UI 感知值变化，以及内部状态同步
                 automode_hint(); 
-            }
-            else if (selectedText == "WPA2-Personal") {
-                setFormValue("rt_wpa_mode", "2");
-                automode_hint();
-            }
-            else if (selectedText == "WPA3-Personal") {
-                setFormValue("rt_wpa_mode", "5");
-                automode_hint();
-            }
-            else if (selectedText == "WPA-Auto-Personal") {
-                setFormValue("rt_wpa_mode", "0");
-                automode_hint();
-            }
-            else if (selectedText == "WPA2-WPA3-Mixed") {
-                setFormValue("rt_wpa_mode", "6");
-                automode_hint();
-            }
-            else if (selectedText == "WPA-Enterprise") {
-                setFormValue("rt_wpa_mode", "3");
-                automode_hint();
-            }
-            else if (selectedText == "WPA-Auto-Enterprise") {
-                setFormValue("rt_wpa_mode", "4");
-                automode_hint();
-            }
-            else if (selectedText == "Enhanced Open") {
-                setFormValue("rt_wpa_mode", "7");
-                automode_hint();
             }
 
             // 聚焦密码输入框
@@ -137,7 +120,7 @@ function change_common_rt(o, s, v) {
         
         // 2. 最后重新检查 Nmode 限制和提示，因为底层状态已变
         nmode_limitation();
-        automode_hint();
+        automode_hint(); 
     }
     else if (v == "rt_crypto") {
         rt_auth_mode_change(0);
@@ -737,8 +720,6 @@ function rt_auth_mode_change(isload) {
             if (algos[i].toLowerCase() == cur)
                 document.form.rt_crypto[i].selected = true;
         }
-	document.form.rt_pmf.value = 1;
-    } else
 	document.form.rt_pmf.value = 0;
 
     change_wep_type(mode, isload);
