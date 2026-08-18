@@ -628,7 +628,7 @@ Change_iptable () {
                     # logger -t "SmartDNS" "已删除ip6tables规则：UDP 53 → $sdns_ported"
                 }
             fi
-            [ "$sdns_enable" = 0 ] && true # logger -t "SmartDNS" "重定向已清除：恢复默认 DNS 解析"
+            [ "$sdns_enable" = 0 ] && logger -t "SmartDNS" "重定向已清除：恢复默认 DNS 解析"
 
 
             if [ "$sdns_redirected" = 1 ]; then
@@ -784,7 +784,7 @@ Start_smartdns () {
 Stop_smartdns () {
     # 停止SmartDNS进程
     killall -9 smartdns >/dev/null 2>&1
-    # logger -t "SmartDNS" "停止操作：正在结束 SmartDNS 进程..."
+    logger -t "SmartDNS" "停止操作：正在结束 SmartDNS 进程..."
 
     # 步骤1：切换adbyby规则回退
     Change_adbyby
