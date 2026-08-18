@@ -24,8 +24,11 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('wl_radio_x');
-	init_itoggle('wl_closed');
+	init_itoggle('wl_radio_x', wl_wps_change);
+	init_itoggle('wl_closed', wl_wps_change);
+	init_itoggle('wl_WPS', wl_wps_change);
+	wps_status_poll();
+	setInterval(wps_status_poll, 10000);
 });
 
 </script>
@@ -68,9 +71,13 @@ function initial(){
 
 	if(document.form.wl_auth_mode.value == "psk"){
 		if(document.form.wl_wpa_mode.value == "0")
-			document.form.wl_auth_mode[4].selected = true;
+			document.form.wl_auth_mode[5].selected = true;
 		else if(document.form.wl_wpa_mode.value == "1")
 			document.form.wl_auth_mode[2].selected = true;
+		else if(document.form.wl_wpa_mode.value == "5")
+			document.form.wl_auth_mode[4].selected = true;
+		else if(document.form.wl_wpa_mode.value == "6")
+			document.form.wl_auth_mode[6].selected = true;
 		else
 			document.form.wl_auth_mode[3].selected = true;
 	}
@@ -100,8 +107,12 @@ function show_middle_status_router(){
 			security_mode = "WPA-Personal";
 		else if(wpa_mode == "2")
 			security_mode = "WPA2-Personal";
+		else if(wpa_mode == "5")
+			security_mode = "WPA3-Personal";
 		else if(wpa_mode == "0")
 			security_mode = "WPA-Auto-Personal";
+		else if(wpa_mode == "6")
+			security_mode = "WPA2-WPA3-Mixed";
 	}
 	else if(auth_mode == "wpa"){
 		if(wpa_mode == "3")
@@ -113,6 +124,8 @@ function show_middle_status_router(){
 		security_mode = "WPA2-Enterprise";
 	else if(auth_mode == "radius")
 		security_mode = "Radius with 802.1x";
+	else if(auth_mode == "owe")
+		security_mode = "Enhanced Open";
 
 	//parent.$("wl_securitylevel_span").innerHTML = security_mode;
 
@@ -135,10 +148,108 @@ function domore_create(){
 	}
 }
 
+// 定义全局状态锁，防止轮询和手动点击导致 UI 冲突
+var isPairing = false;
+var wpsFailUntil = 0;
+
+function wps_pbc() {
+    var $button = $j('#btn_connect');
+    // 如果处于禁用状态或正在配对中，禁止重复触发
+    if ($button.hasClass('disabled') || $button.prop('disabled') || isPairing) return;
+
+    $button.button('loading'); // 显示加载状态
+    
+    $j.getJSON('/wps_action.asp', function(response) {
+        if (response.status == 0) {
+            $j('#wps_status_txt').text('配对中…');
+            
+            // 配对成功反馈逻辑：30秒后恢复
+            var idTimeOut = setTimeout(function() {
+                isPairing = false;
+                $button.removeClass('btn-info').addClass('btn-success');
+                $button.button('reset');
+                $button.addClass('wps-done');
+                
+                // 2秒后重置按钮样式
+                var idTimeOut2 = setTimeout(function() {
+                    $button.removeClass('wps-done')
+                           .removeClass('btn-success')
+                           .removeClass('btn-info')
+                           .addClass('btn-success');
+                }, 2000);
+            }, 30000);
+
+        } else {
+            // 失败处理：设置 4 秒保护期，在此期间轮询不覆盖失败状态
+            wpsFailUntil = Date.now() + 4000;
+            $j('#wps_status_txt').text('配对失败');
+            $button.removeClass('btn-success').addClass('btn-info');
+            
+            setTimeout(function() {
+                isPairing = false;
+                $button.button('reset');
+                // 修复原代码逻辑：失败后不应变 btn-success，而是恢复默认或保持状态态
+                $button.removeClass('btn-success').removeClass('btn-info').addClass('btn-info'); 
+            }, 2000);
+        }
+    });
+}
+
+function wps_status_poll() {
+    $j.getJSON('/wps_status.asp', function(res) {
+        var el = $j('#wps_status_txt');
+        if (!el.length) return;
+        var btn = $j('#btn_connect');
+        var s = res.status;
+
+        // 如果在失败保护窗口内，则不更新状态文字
+        if (Date.now() < wpsFailUntil) return;
+
+        if (s >= 3) {
+            el.text('配对中…');
+            if (!btn.hasClass('disabled') && !isPairing) {
+                btn.button('loading');
+            }
+        } else {
+            if (s == 2) el.text('配对失败');
+            else if (s == 34) el.text('已完成');
+            else el.text('空闲');
+            
+            if (btn.hasClass('disabled')) btn.button('reset');
+        }
+    });
+}
+
+function wl_wps_change() {
+    // 确保表单存在
+    var f = document.form;
+    if (!f) return;
+
+    var mode = f.wl_auth_mode.value;
+    var wl_close = f.wl_closed.value;
+    var wl_radio = f.wl_radio_x.value;
+
+    // 修复原代码中的 语法错误：使用正确的 jQuery 选择器和 show 方法
+    if (wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0) {
+        $j("#wl_WPS").show();
+        // 根据值显示或隐藏按钮容器
+        $j("#wps_button").toggle(f.wl_WPS.value != 0);
+    } else {
+        // 修复硬编码索引风险：建议通过类选择，这里增加长度判断防止报错
+        var toggles = $j("label.itoggle");
+        if (toggles.length > 2) {
+            toggles.eq(2).click();
+        }
+        $j("#wl_WPS").hide();
+        $j("#wps_button").hide();
+    }
+}
+
 function wl_auth_mode_change(isload){
 	var mode = document.form.wl_auth_mode.value;
 	var opts = document.form.wl_auth_mode.options;
 	var new_array;
+	var cur_pmf;
 	var cur_crypto;
 	var cur_key_index, cur_key_obj;
 
@@ -154,7 +265,7 @@ function wl_auth_mode_change(isload){
 		$("asus_wep_key").style.display = "none";
 	}
 
-	if(mode == "wpa" || mode == "wpa2" || mode == "psk")
+	if(mode == "wpa" || mode == "wpa2" || mode == "psk" || mode == "owe")
 		$("wl_crypto").style.display = "";
 	else
 		$("wl_crypto").style.display = "none";
@@ -163,6 +274,40 @@ function wl_auth_mode_change(isload){
 		$("wl_wpa_psk").style.display = "";
 	else
 		$("wl_wpa_psk").style.display = "none";
+
+
+	for(var i = 0; i < document.form.wl_pmf.length; ++i)
+		if(document.form.wl_pmf[i].selected){
+			cur_pmf = document.form.wl_pmf[i].value;
+			break;
+		}
+
+	free_options(document.form.wl_pmf);
+	$("wl_pmf").style.display = "";
+	if(opts[opts.selectedIndex].text == "WPA2-Personal" || opts[opts.selectedIndex].text == "WPA2-Enterprise (Radius)") {
+		new_array = new Array("<#PMF_Disabled#>","<#PMF_Capable#>","<#PMF_Mandatory#>");
+	} else if (opts[opts.selectedIndex].text == "WPA3-Personal" || opts[opts.selectedIndex].text == "Enhanced Open") {
+		new_array = new Array("<#PMF_Mandatory#>");
+	} else if (opts[opts.selectedIndex].text == "WPA2-WPA3-Mixed") {
+		new_array = new Array("<#PMF_Capable#>");
+	} else {
+		$("rt_pmf").style.display = "none";
+		new_array = new Array("<#PMF_Disabled#>");
+	}
+
+	for(var i in new_array){
+		var tmp;
+		if (new_array[i] == "<#PMF_Disabled#>")
+			tmp = 0;
+		else if (new_array[i] == "<#PMF_Capable#>")
+			tmp = 1;
+		else
+			tmp = 2;
+		document.form.wl_pmf[i] = new Option(new_array[i], tmp);
+		document.form.wl_pmf[i].value = tmp;
+		if(tmp == cur_pmf)
+			document.form.wl_pmf[i].selected = true;
+	}
 
 	for(var i = 0; i < document.form.wl_crypto.length; ++i)
 		if(document.form.wl_crypto[i].selected){
@@ -173,7 +318,7 @@ function wl_auth_mode_change(isload){
 	if(mode == "psk"){
 		if(opts[opts.selectedIndex].text == "WPA-Personal")
 			new_array = new Array("TKIP");
-		else if(opts[opts.selectedIndex].text == "WPA2-Personal")
+		else if(opts[opts.selectedIndex].text == "WPA2-Personal" || opts[opts.selectedIndex].text == "WPA3-Personal" || opts[opts.selectedIndex].text == "WPA2-WPA3-Mixed")
 			new_array = new Array("AES");
 		else
 			new_array = new Array("AES", "TKIP+AES");
@@ -200,7 +345,7 @@ function wl_auth_mode_change(isload){
 				document.form.wl_crypto[i].selected = true;
 		}
 	}
-	else if(mode == "wpa2"){
+	else if(mode == "wpa2" || mode == "owe"){
 		new_array = new Array("AES");
 		
 		free_options(document.form.wl_crypto);
@@ -218,7 +363,7 @@ function wl_auth_mode_change(isload){
 			break;
 		}
 	
-	if(mode == "psk" || mode == "wpa" || mode == "wpa2")
+	if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "owe")
 		new_array = new Array("2", "3");
 	else{
 		new_array = new Array("1", "2", "3", "4");
@@ -235,6 +380,7 @@ function wl_auth_mode_change(isload){
 			document.form.wl_key[i].selected = true;
 	}
 
+	wl_wps_change();
 	wl_wep_change();
 }
 
@@ -262,7 +408,7 @@ function change_wep_type(mode){
 		}
 	}
 
-	if(mode == "psk" || mode == "wpa" || mode == "wpa2")
+	if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "owe")
 		document.form.wl_wep_x.value = "0";
 
 	change_wlweptype(document.form.wl_wep_x);
@@ -291,11 +437,12 @@ function wl_wep_change(){
 	var mode = document.form.wl_auth_mode.value;
 	var wep = document.form.wl_wep_x.value;
 
-	if(mode == "psk" || mode == "wpa" || mode == "wpa2"){
-		if(mode == "psk"){
+	if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "owe"){
+		if((mode == "psk" || mode == "owe")
 			$("wl_crypto").style.display = "";
+			
+		if(mode == "psk")
 			$("wl_wpa_psk").style.display = "";
-		}
 		
 		//blocking("all_related_wep", 0);
 		$("all_related_wep").style.display = "none";
@@ -337,24 +484,31 @@ function change_key_des(){
 
 function change_auth_mode(auth_mode_obj){
 	wl_auth_mode_change(0);
-	if(auth_mode_obj.value == "psk" || auth_mode_obj.value == "wpa"){
+	if(auth_mode_obj.value == "psk" || auth_mode_obj.value == "wpa" || auth_mode_obj.value == "owe"){
 		var opts = document.form.wl_auth_mode.options;
-		
+
 		if(opts[opts.selectedIndex].text == "WPA-Personal")
 			document.form.wl_wpa_mode.value = "1";
 		else if(opts[opts.selectedIndex].text == "WPA2-Personal")
 			document.form.wl_wpa_mode.value="2";
+		else if(opts[opts.selectedIndex].text == "WPA3-Personal")
+			document.form.wl_wpa_mode.value="5";
 		else if(opts[opts.selectedIndex].text == "WPA-Auto-Personal")
 			document.form.wl_wpa_mode.value="0";
+		else if(opts[opts.selectedIndex].text == "WPA2-WPA3-Mixed")
+			document.form.wl_wpa_mode.value="6";
 		else if(opts[opts.selectedIndex].text == "WPA-Enterprise (Radius)")
 			document.form.wl_wpa_mode.value="3";
 		else if(opts[opts.selectedIndex].text == "WPA-Auto-Enterprise (Radius)")
 			document.form.wl_wpa_mode.value = "4";
-		
+		else if(opts[opts.selectedIndex].text == "Enhanced Open")
+			document.form.wl_wpa_mode.value="7";
+
 		if(auth_mode_obj.value == "psk"){
 			document.form.wl_wpa_psk.focus();
 			document.form.wl_wpa_psk.select();
 		}
+
 	}
 	else if(auth_mode_obj.value == "shared"){
 		show_key();
@@ -521,9 +675,9 @@ function nmode_limitation2(){
 			document.form.wl_auth_mode.selectedIndex = 3;
 			document.form.wl_wpa_mode.value = 2;
 		}
-		else if(document.form.wl_auth_mode.selectedIndex == 5){
+		else if(document.form.wl_auth_mode.selectedIndex == 7){
 			alert("<#WLANConfig11n_nmode_limition_hint#>");
-			document.form.wl_auth_mode.selectedIndex = 6;
+			document.form.wl_auth_mode.selectedIndex = 8;
 		}
 		wl_auth_mode_change(1);
 	}
@@ -564,6 +718,11 @@ window.onunload  = function(){
 </script>
 
 <style>
+/* ===== WPS circular icon button (one SVG mask + CSS colors) ===== */
+:root {
+    --wps-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSIjMDAwIj48cGF0aCBkPSJNIDUyLjUgMTcuMiBDIDQ1LjIgMTcuMiAzNi44IDIwLjggMzAuNSAyNy4xIEMgMjEuMiAzNi40IDE4LjUgNDkuOCAyMi44IDYxLjUgQyAyMy44IDY0LjIgMjUuNSA2Ny44IDI4LjIgNzEuMiBDIDI5LjUgNzIuOCAzMC44IDcyLjIgMjkuOCA3MC4xIEMgMjYuMiA2Mi44IDI1LjggNTUuMiAyOC4xIDQ3LjggQyAzMS41IDM2LjggNDEuMiAyOS41IDUyLjggMjkuNSBDIDU0LjggMjkuNSA1Ni41IDI5LjggNTYuNSAyNy4yIEMgNTYuNSAyMy41IDU1LjIgMTcuMiA1Mi41IDE3LjIgWiIvPjxwYXRoIGQ9Ik0gNDQuNSAxMS4yIEMgNDQuNSAxMC4yIDQ2LjIgMTAuMiA0Ny41IDExLjUgTCA2MC41IDI0LjUgQyA2MS44IDI1LjggNjEuOCAyNy4yIDYwLjUgMjguNSBMIDQ3LjUgNDEuNSBDIDQ2LjIgNDIuOCA0NC41IDQxLjggNDQuNSA0MC44IFoiLz48cGF0aCBkPSJNIDQ3LjUgODIuOCBDIDU0LjggODIuOCA2My4yIDc5LjIgNjkuNSA3Mi45IEMgNzguOCA2My42IDgxLjUgNTAuMiA3Ny4yIDM4LjUgQyA3Ni4yIDM1LjggNzQuNSAzMi4yIDcxLjggMjguOCBDIDcwLjUgMjcuMiA2OS4yIDI3LjggNzAuMiAyOS45IEMgNzMuOCAzNy4yIDc0LjIgNDQuOCA3MS45IDUyLjIgQyA2OC41IDYzLjIgNTguOCA3MC41IDQ3LjIgNzAuNSBDIDQ1LjIgNzAuNSA0My41IDcwLjIgNDMuNSA3Mi44IEMgNDMuNSA3Ni41IDQ0LjggODIuOCA0Ny41IDgyLjggWiIvPjxwYXRoIGQ9Ik0gNTUuNSA4OC44IEMgNTUuNSA4OS44IDUzLjggODkuOCA1Mi41IDg4LjUgTCAzOS41IDc1LjUgQyAzOC4yIDc0LjIgMzguMiA3Mi44IDM5LjUgNzEuNSBMIDUyLjUgNTguNSBDIDUzLjggNTcuMiA1NS41IDU4LjIgNTUuNSA1OS4yIFoiLz48L2c+PC9zdmc+");
+}
+
     .table th{vertical-align: middle;}
     .table input, .table select{margin-bottom: 0px;}
 </style>
@@ -637,6 +796,20 @@ window.onunload  = function(){
         </div>
     </td>
     </tr>
+   <tr id='wl_WPS'>
+      <th width="110"><#WLANConfig11b_x_WPS_itemname#></th>
+      <td>
+        <div class="main_itoggle">
+            <div id="wl_WPS_on_of">
+                <input type="checkbox" id="wl_WPS_fake" <% nvram_match_x("", "wl_WPS", "7", "value=7 checked"); %><% nvram_match_x("", "wl_WPS", "0", "value=0"); %>>
+            </div>
+        </div>
+        <div style="position: absolute; margin-left: -10000px;">
+            <input type="radio" name="wl_WPS" id="wl_WPS_1" value="7" <% nvram_match_x("", "wl_WPS", "7", "checked"); %>/><#checkbox_Yes#>
+            <input type="radio" name="wl_WPS" id="wl_WPS_0" value="0" <% nvram_match_x("", "wl_WPS", "0", "checked"); %>/><#checkbox_No#>
+        </div>
+      </td>
+  </tr>
     <tr>
     <th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
     <td>
@@ -645,10 +818,13 @@ window.onunload  = function(){
 		<option value="shared" <% nvram_match_x("","wl_auth_mode", "shared","selected"); %>>Shared Key</option>
 		<option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
 		<option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+		<option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "5", "selected"); %>>WPA3-Personal</option>
 		<option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
 		<option value="wpa" <% nvram_double_match_x("", "wl_auth_mode", "wpa", "", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise (Radius)</option>
+		<option value="psk" <% nvram_double_match_x("", "wl_auth_mode", "psk", "", "wl_wpa_mode", "6", "selected"); %>>WPA2-WPA3-Mixed</option>
 		<option value="wpa2" <% nvram_match_x("", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise (Radius)</option>
 		<option value="wpa" <% nvram_double_match_x("", "wl_auth_mode", "wpa", "", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise (Radius)</option>
+		<option value="owe" <% nvram_match_x("", "wl_auth_mode", "owe", "selected"); %>>Enhanced Open</option>
 		<option value="radius" <% nvram_match_x("","wl_auth_mode", "radius","selected"); %>>Radius with 802.1x</option>
 	  </select>
     </td>
@@ -704,6 +880,16 @@ window.onunload  = function(){
         </div>
     </td>
   </tr>
+  <tr id='wl_pmf' style='display:none;'>
+	<th width="110"><#WLANConfig11b_PMFType_itemname#></th>
+	<td>
+		<select name="wl_pmf" class="input" onchange="wl_auth_mode_change(0);">
+		<option value="0" <% nvram_match_x("", "wl_pmf", "0", "selected"); %>><#PMF_Disabled#></option>
+		<option value="1" <% nvram_match_x("", "wl_pmf", "1", "selected"); %>><#PMF_Capable#></option>
+		<option value="2" <% nvram_match_x("", "wl_pmf", "2", "selected"); %>><#PMF_Mandatory#></option>
+		</select>
+	</td>
+  </tr>
   <tr>
     <th>&nbsp;</th>
     <td>
@@ -712,6 +898,14 @@ window.onunload  = function(){
   </tr>
  </table>
  <table class="table">
+  <tr id="wps_button">
+    <th width="50%"><#WPSControl#></th>
+    <td>
+      <button type="button" id="btn_connect" class="btn btn-success btn-wps" title="<#WPS_Trigger#>" onclick="wps_pbc()"></button>
+      <span id="wps_status_txt" style="margin-left:10px;font-size:12px;color:#8FD4EF;vertical-align:middle"></span>
+    </td>
+  </tr>
+  <tr>
     <th width="50%"><#LAN_IP#></th>
     <td id="LANIP"></td>
   </tr>
@@ -719,7 +913,7 @@ window.onunload  = function(){
     <th><#MAC_Address#></th>
     <td id="MAC"></td>
   </tr>
-  <tr>
+ <tr>
     <th>&nbsp;</th>
     <td>
         <select id="Router_domore" class="domore" onchange="domore_link(this);">

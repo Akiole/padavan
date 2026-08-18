@@ -53,7 +53,7 @@ function initial(){
 	showLANIPList();
 
 	change_wireless_bridge();
-	change_sta_auth_mode(0);
+	change_sta_auth_mode();
 
 	document.form.rt_channel.value = document.form.rt_channel_org.value;
 	document.form.rt_sta_ssid.value = decodeURIComponent(document.form.rt_sta_ssid_org.value);
@@ -153,6 +153,7 @@ function change_wireless_bridge(){
 	showhide_div("row_apc_1", is_apc);
 	showhide_div("row_apc_2", is_apc);
 	showhide_div("row_apc_3", is_apc);
+	showhide_div("row_apc_4", is_apc);
 }
 
 function change_wdsapply(){
@@ -164,28 +165,71 @@ function change_wdsapply(){
 	}
 }
 
-function change_sta_auth_mode(mflag){
+function change_sta_auth_mode(){
 	var mode = document.form.rt_sta_auth_mode.value;
 	var opts = document.form.rt_sta_auth_mode.options;
+	var m = document.form.rt_mode_x.value;
+
+	for(var i = 0; i < document.form.rt_sta_crypto.length; ++i)
+		if(document.form.rt_sta_crypto[i].selected){
+			cur_crypto = document.form.rt_sta_crypto[i].value;
+			break;
+		}
+
+	for(var i = 0; i < document.form.rt_sta_pmf.length; ++i)
+		if(document.form.rt_sta_pmf[i].selected){
+			cur_pmf = document.form.rt_sta_pmf[i].value;
+			break;
+		}
+
 	if(mode == "psk"){
 		inputCtrl(document.form.rt_sta_crypto, 1);
 		inputCtrl(document.form.rt_sta_wpa_psk, 1);
-		if(opts[opts.selectedIndex].text == "WPA2-Personal"){
-			if (mflag == 1){
-				document.form.rt_sta_crypto.options[0].selected = 0;
-				document.form.rt_sta_crypto.options[1].selected = 1;
-				document.form.rt_sta_wpa_mode.value = "2";
-			}
-		}else{
-			if (mflag == 1){
-				document.form.rt_sta_crypto.options[1].selected = 0;
-				document.form.rt_sta_crypto.options[0].selected = 1;
-				document.form.rt_sta_wpa_mode.value = "1";
-			}
+		document.form.rt_sta_wpa_mode.value = opts.selectedIndex;
+		if(opts[opts.selectedIndex].text == "WPA-Personal" || opts[opts.selectedIndex].text == "WPA2-Personal")
+			new_array = new Array("AES", "TKIP");
+		else {
+			new_array = new Array("AES");
 		}
+
+		free_options(document.form.rt_sta_crypto);
+		for(var i in new_array){
+			document.form.rt_sta_crypto[i] = new Option(new_array[i], new_array[i].toLowerCase());
+			document.form.rt_sta_crypto[i].value = new_array[i].toLowerCase();
+			if(new_array[i].toLowerCase() == cur_crypto)
+				document.form.rt_sta_crypto[i].selected = true;
+		}
+
 	}else{
 		inputCtrl(document.form.rt_sta_crypto, 0);
 		inputCtrl(document.form.rt_sta_wpa_psk, 0);
+	}
+
+	if (m == "3" || m == "4")
+		showhide_div("row_apc_4", 1);
+
+	free_options(document.form.rt_sta_pmf);
+	if (opts[opts.selectedIndex].text == "WPA3-Personal")
+		new_array = new Array("<#PMF_Mandatory#>");
+	else if (opts[opts.selectedIndex].text == "WPA2-Personal" && document.form.rt_sta_crypto[0].selected == true)
+		new_array = new Array("<#PMF_Disabled#>","<#PMF_Capable#>","<#PMF_Mandatory#>");
+	else {
+		new_array = new Array("<#PMF_Disabled#>");
+		showhide_div("row_apc_4", 0);
+	}
+
+	for(var i in new_array){
+		var tmp;
+		if (new_array[i] == "<#PMF_Disabled#>")
+			tmp = 0;
+		else if (new_array[i] == "<#PMF_Capable#>")
+			tmp = 1;
+		else
+			tmp = 2;
+		document.form.rt_sta_pmf[i] = new Option(new_array[i], tmp);
+		document.form.rt_sta_pmf[i].value = tmp;
+		if(tmp == cur_pmf)
+			document.form.rt_sta_pmf[i].selected = true;
 	}
 }
 
@@ -407,17 +451,18 @@ function hideClients_Block(){
                                         <tr id="row_apc_1" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
-                                                <select name="rt_sta_auth_mode" class="input" onChange="change_sta_auth_mode(1);">
+                                                <select name="rt_sta_auth_mode" class="input" onChange="change_sta_auth_mode();">
                                                     <option value="open" <% nvram_match_x("", "rt_sta_auth_mode", "open", "selected"); %>>Open System</option>
                                                     <option value="psk" <% nvram_double_match_x("", "rt_sta_auth_mode", "psk", "", "rt_sta_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
                                                     <option value="psk" <% nvram_double_match_x("", "rt_sta_auth_mode", "psk", "", "rt_sta_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+                                                    <option value="psk" <% nvram_double_match_x("", "rt_sta_auth_mode", "psk", "", "rt_sta_wpa_mode", "3", "selected"); %>>WPA3-Personal</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr id="row_apc_2" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
-                                                <select name="rt_sta_crypto" class="input">
+                                                <select name="rt_sta_crypto" class="input" onChange="change_sta_auth_mode();">
                                                     <option value="tkip" <% nvram_match_x("", "rt_sta_crypto", "tkip", "selected"); %>>TKIP</option>
                                                     <option value="aes" <% nvram_match_x("", "rt_sta_crypto", "aes", "selected"); %>>AES</option>
                                                 </select>
@@ -430,6 +475,16 @@ function hideClients_Block(){
                                                     <input type="password" name="rt_sta_wpa_psk" id="rt_sta_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('rt_sta_wpa_psk')"><i class="icon-eye-close"></i></button>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_apc_4" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 27);"><#WLANConfig11b_PMFType_itemname#></a></th>
+                                            <td>
+                                                <select name="rt_sta_pmf" class="input" onchange="change_sta_auth_mode();">
+                                                    <option value="0" <% nvram_match_x("", "rt_sta_pmf", "0", "selected"); %>><#PMF_Disabled#></option>
+                                                    <option value="1" <% nvram_match_x("", "rt_sta_pmf", "1", "selected"); %>><#PMF_Capable#></option>
+                                                    <option value="2" <% nvram_match_x("", "rt_sta_pmf", "2", "selected"); %>><#PMF_Mandatory#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

@@ -204,12 +204,13 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_APSDCapable", "0" },
 	{ "wl_HT_OpMode", "1" },
 	{ "wl_pmf", "0" },
-	{ "wl_pmfsha256", "0" },
+	{ "wl_sta_pmf", "0" },
 #if BOARD_HAS_5G_11AC
 	{ "wl_HT_BW", "2" },
 #else
 	{ "wl_HT_BW", "1" },
 #endif
+	{ "rt_WPS", "0" },
 	{ "wl_txbf", "1" },
 	{ "wl_ssid2",  DEF_WLAN_5G_SSID },
 	{ "wl_mode_x", "0" },				/* 5GHz Wireless Bridge Mode */
@@ -300,6 +301,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_mrate", "2" },
 	{ "rt_mode", "ap" },
 	{ "rt_HT_BW", "1" },
+	{ "rt_WPS", "0" },
 	{ "rt_HT_EXTCHA", "1" },
 	{ "rt_HT_OpMode", "1" },
 	{ "rt_wme", "1" },
@@ -341,7 +343,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_preamble", "1" },
 	{ "rt_greenap", "0" },			/* 2.4GHz GreenAP */
 	{ "rt_pmf", "0" },
-	{ "rt_pmfsha256", "0" },
+	{ "rt_sta_pmf", "0" },
 	{ "rt_HT_RDG", "0" },
 	{ "rt_HT_AMSDU", "1" },
 	{ "rt_HT_80211KV", "0" },

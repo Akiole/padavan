@@ -271,12 +271,84 @@ function submitInternet(v){
 }
 
 </script>
+<style>
+/* ===== typography: external network status (scoped) ===== */
+#tbl_info th{
+    width:150px;
+    text-align:right;
+    padding-right:14px;
+    font-size:13px;
+    font-weight:500;
+    color:rgba(255,255,255,0.55);
+    white-space:nowrap;
+}
+#tbl_info td{
+    font-family:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+    font-size:13px;
+    font-weight:500;
+    font-feature-settings:"tnum" 1;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:0.01em;
+}
+#tbl_info .ip-address{
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:0.01em;
+    white-space:nowrap;
+    color:#CBD5E1;
+}
+/* ===== WAN 操作按钮与状态徽章配色 ===== */
+#tbl_info .btn-info{
+    background-color:#F59E0B;
+    background-image:none;
+    border-color:#D97706;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    line-height:18px;
+    padding:3px 12px;
+}
+#tbl_info .btn-info:hover{
+    background-color:#D97706;
+}
+#tbl_info .btn-danger{
+    background-color:#DC2626;
+    background-image:none;
+    border-color:#B91C1C;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    line-height:18px;
+    padding:3px 12px;
+}
+#tbl_info .btn-danger:hover{
+    background-color:#B91C1C;
+}
+#WANBytesRX, #WANBytesTX, #WANBRateRX, #WANBRateTX{
+    white-space:nowrap;
+}
+#tbl_info .label-success{
+    background-color:#10B981;
+    padding:3px 10px;
+    font-size:13px;
+    line-height:18px;
+    border-radius:10px;
+}
+#tbl_info .label-warning{
+    background-color:#F59E0B;
+    padding:3px 10px;
+    font-size:13px;
+    line-height:18px;
+    border-radius:10px;
+    color:#fff;
+}
+</style>
 </head>
 
 <body class="body_iframe" onload="initial();">
 <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_info">
   <tr>
-    <th width="50%" style="border-top: 0 none;"><#InetControl#></th>
+    <th style="border-top: 0 none;"><#InetControl#></th>
     <td style="border-top: 0 none;" colspan="3">
       <input type="button" id="btn_connect_1" class="btn btn-info" value="<#Connect#>" onclick="submitInternet('Connect');">
       <input type="button" id="btn_connect_0" class="btn btn-danger" value="<#Disconnect#>" onclick="submitInternet('Disconnect');">
@@ -329,35 +401,35 @@ function submitInternet(v){
   </tr>
   <tr>
     <th><#IP4_Addr#> WAN:</th>
-    <td colspan="3"><span id="WANIP4"></span></td>
+    <td colspan="3"><span id="WANIP4" class="ip-address"></span></td>
   </tr>
   <tr id="row_man_ip4" style="display:none">
     <th><#IP4_Addr#> MAN:</th>
-    <td colspan="3"><span id="MANIP4"></span></td>
+    <td colspan="3"><span id="MANIP4" class="ip-address"></span></td>
   </tr>
   <tr id="row_wan_ip6" style="display:none">
     <th><#IP6_Addr#> WAN:</th>
-    <td colspan="3"><span id="WANIP6"></span></td>
+    <td colspan="3"><span id="WANIP6" class="ip-address"></span></td>
   </tr>
   <tr id="row_lan_ip6" style="display:none">
     <th><#IP6_Addr#> LAN:</th>
-    <td colspan="3"><span id="LANIP6"></span></td>
+    <td colspan="3"><span id="LANIP6" class="ip-address"></span></td>
   </tr>
   <tr>
     <th><#Gateway#> WAN:</th>
-    <td colspan="3"><span id="WANGW4"></span></td>
+    <td colspan="3"><span id="WANGW4" class="ip-address"></span></td>
   </tr>
   <tr id="row_man_gw4" style="display:none">
     <th><#Gateway#> MAN:</th>
-    <td colspan="3"><span id="MANGW4"></span></td>
+    <td colspan="3"><span id="MANGW4" class="ip-address"></span></td>
   </tr>
   <tr>
-    <th><#DNS#></th>
-    <td colspan="3"><span id="WANDNS"></span></td>
+    <th>DNS:</th>
+    <td colspan="3"><span id="WANDNS" class="ip-address"></span></td>
   </tr>
   <tr>
     <th><#MAC_Address#></th>
-    <td colspan="3"><span id="WANMAC"></span></td>
+    <td colspan="3"><span id="WANMAC" class="ip-address"></span></td>
   </tr>
   <tr id="row_more_links">
     <td style="padding-bottom: 0px;">&nbsp;</td>

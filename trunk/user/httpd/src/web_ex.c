@@ -2366,6 +2366,43 @@ ej_detect_internet_hook(int eid, webs_t wp, int argc, char **argv)
 }
 
 static int
+wps_action_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int sys_result;
+	sys_result = doSystem("/bin/iwpriv %s set WscMode=2", IFNAME_5G_MAIN);
+	if (sys_result != 0)
+		goto exit;
+	sys_result = doSystem("/bin/iwpriv %s set WscGetConf=1", IFNAME_5G_MAIN);
+
+exit:
+	websWrite(wp, "{\"status\": \"%d\"}", sys_result);
+	return 0;
+}
+
+static int
+wps_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+    FILE *fp = NULL;
+    char buf[128];
+    int status = -1; // 默认错误状态
+
+    // 使用 popen 直接读取命令输出，避免使用固定临时文件
+    fp = popen("/bin/iwpriv rax0 get_wsc_status 2>&1", "r");
+    if (fp) {
+        while (fgets(buf, sizeof(buf), fp)) {
+            if (sscanf(buf, "WSC_Status=%d", &status) == 1) {
+                break;
+            }
+        }
+        pclose(fp);
+    }
+
+    // 如果 status 未被赋值，说明解析失败或命令未执行
+    websWrite(wp, "{\"status\": %d}", status);
+    return 0;
+}
+
+static int
 wol_action_hook(int eid, webs_t wp, int argc, char **argv) 
 {
 	int i, sys_result;
@@ -4501,6 +4538,8 @@ struct ej_handler ej_handlers[] =
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
 	{ "wol_action", wol_action_hook},
+	{ "wps_action", wps_action_hook},
+	{ "wps_status", wps_status_hook},
 	{ "nf_values", nf_values_hook},
 	{ "get_parameter", ej_get_parameter},
 	{ "get_nvram_list", ej_get_nvram_list},

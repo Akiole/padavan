@@ -13,7 +13,7 @@ CONFIG_FILE     := $(SOURCE_DIR)/.config
 TOOLCHAIN       ?= $(or $(shell echo $$TOOLCHAIN), mipsel-linux-musl)
 TOOLCHAIN_ROOT  := $(TOPDIR)/toolchain
 TOOLCHAIN_PATH  := $(TOOLCHAIN_ROOT)/$(TOOLCHAIN)
-TOOLCHAIN_URL   ?= $(or $(shell echo $$TOOLCHAIN_URL), https://github.com/Akiole/padavan/releases/download/toolchain/$(TOOLCHAIN).tar.xz)
+TOOLCHAIN_URL   ?= $(or $(shell echo $$TOOLCHAIN_URL), https://github.com/TurBoTse/padavan/releases/download/toolchain/$(TOOLCHAIN).tar.xz)
 QUEUE_H         := $(TOOLCHAIN_PATH)/$(TOOLCHAIN)/sysroot/usr/include/sys/queue.h
 QUEUE_H_URL     := https://raw.githubusercontent.com/bminor/glibc/master/misc/sys/queue.h
 
