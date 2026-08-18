@@ -107,14 +107,14 @@ Read_ini () {
 # 文件完整性校验
 Check_md5 () {
     # 【检测某些文件是否变动】
-    echo "smartdns：" "Enter Check_md5"
+    echo "smartdns：Enter Check_md5"
     
     files="$storage_Path/smartdns_*.sh"
     md5="$storage_Path/smartdns.md5"
     new_md5="/tmp/smartdns.md5"
     status=0
     
-    md5sum -b "$files" > $new_md5
+    md5sum -b "$files" > "$new_md5"
     if [ -s "$md5" ] ; then
         diff "$md5" "$new_md5" >/dev/null 2>&1
         [ $? -eq 1 ] && status=1
