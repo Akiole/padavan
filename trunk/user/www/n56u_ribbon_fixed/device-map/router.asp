@@ -24,7 +24,7 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('wl_radio_x');
+	init_itoggle('wl_radio_x', wl_wps_change);
 	init_itoggle('wl_closed', wl_wps_change);
 	init_itoggle('wl_WPS', wl_wps_change);
 	wps_status_poll();
@@ -221,7 +221,6 @@ function wps_status_poll() {
 }
 
 function wl_wps_change() {
-    // 确保表单存在
     var f = document.form;
     if (!f) return;
 
@@ -229,19 +228,21 @@ function wl_wps_change() {
     var wl_close = f.wl_closed.value;
     var wl_radio = f.wl_radio_x.value;
 
-    // 修复原代码中的 语法错误：使用正确的 jQuery 选择器和 show 方法
-    if (wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0) {
-        $j("#wl_WPS").show();
-        // 根据值显示或隐藏按钮容器
-        $j("#wps_button").toggle(f.wl_WPS.value != 0);
+    // 逻辑判断：只有在特定模式下才显示
+    var isWpsActive = (wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0);
+
+    if (isWpsActive) {
+        // 使用 show() 确保显示，但要注意 CSS 是否有特殊布局
+        $j("#wl_WPS").show(); 
+        // 根据具体值决定按钮是否显示
+        $j("#wps_button").toggle(f.wl_WPS.value != 0); 
     } else {
-        // 修复硬编码索引风险：建议通过类选择，这里增加长度判断防止报错
-        var toggles = $j("label.itoggle");
-        if (toggles.length > 2) {
-            toggles.eq(2).click();
-        }
+        // 隐藏逻辑
         $j("#wl_WPS").hide();
         $j("#wps_button").hide();
+
+        // 【修复】移除 toggles.eq(2).click(); 
+        // 如果确实需要关闭某个面板，应该直接操作该元素的状态，而不是模拟点击
     }
 }
 
