@@ -23,7 +23,21 @@ var $j = jQuery.noConflict();
 var ipmonitor = [<% get_static_client(); %>];
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-var wol_saved = <% wol_maclist(); %>;
+// 1. 必须加引号防止语法错误
+var raw_data = "<% wol_maclist(); %>"; 
+var wol_saved = [];
+
+// 2. 如果后端返回的是逗号分隔的字符串，将其转为数组
+if (raw_data) {
+    var parts = raw_data.split(','); 
+    parts.forEach(function(mac) {
+        if(mac.trim()) {
+            // 构造你后续代码需要的 [mac, name] 结构
+            wol_saved.push([mac.trim(), ""]); 
+        }
+    });
+}
+
 var wol_saved_by_mac = {};
 
 var staticClients = get_resolved_clients();
