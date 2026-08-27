@@ -24,7 +24,7 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('wl_radio_x', wl_wps_change);
+	init_itoggle('wl_radio_x');
 	init_itoggle('wl_closed', wl_wps_change);
 	init_itoggle('wl_WPS', wl_wps_change);
 	wps_status_poll();
