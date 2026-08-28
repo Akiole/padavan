@@ -24,11 +24,23 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('wl_radio_x');
-	init_itoggle('wl_closed');
-	init_itoggle('wl_WPS');
-	wps_status_poll();
-	setInterval(wps_status_poll, 10000);
+    // 包装函数，用于捕获错误
+    var safe_wps_change = function() {
+        try {
+            wl_wps_change();
+        } catch (e) {
+            console.error("wl_wps_change 执行出错，已拦截以保护UI：", e);
+            // 报错后直接返回，不再让错误继续向下影响UI渲染
+        }
+    };
+
+    // 将包装后的函数传入即可
+    init_itoggle('wl_radio_x', safe_wps_change);
+    init_itoggle('wl_closed', safe_wps_change);
+    init_itoggle('wl_WPS', safe_wps_change);
+
+    wps_status_poll();
+    setInterval(wps_status_poll, 10000);
 });
 
 </script>
