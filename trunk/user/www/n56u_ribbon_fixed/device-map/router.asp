@@ -148,95 +148,79 @@ function domore_create(){
 	}
 }
 
-// 定义全局状态锁，防止轮询和手动点击导致 UI 冲突
-var isPairing = false;
-var wpsFailUntil = 0;
+var wpsFailUntil = 0;	// 触发失败后的显示窗口, 期间轮询不覆盖
 
-function wps_pbc() {
-    var $button = $j('#btn_connect');
-    if ($button.hasClass('disabled') || $button.prop('disabled') || isPairing) return;
-
-    isPairing = true; // 立即锁定
-    $button.button('loading');
-    
-    $j.getJSON('/wps_action.asp', function(response) {
-        if (response.status == 0) {
-            $j('#wps_status_txt').text('配对中…');
-            
-            setTimeout(function() {
-                isPairing = false;
-                $button.removeClass('btn-info').addClass('btn-success');
-                $button.button('reset');
-                $button.addClass('wps-done');
-                
-                setTimeout(function() {
-                    $button.removeClass('wps-done btn-success btn-info').addClass('btn-success');
-                }, 2000);
-            }, 30000);
-
-        } else {
-            // 失败处理
-            wpsFailUntil = Date.now() + 4000;
-            $j('#wps_status_txt').text('配对失败');
-            $button.removeClass('btn-success').addClass('btn-info');
-            
-            setTimeout(function() {
-                isPairing = false;
-                $button.button('reset');
-                // 恢复初始状态，不要乱加奇怪的类
-                $button.removeClass('btn-info'); 
-            }, 2000);
-        }
-    });
+function wps_pbc(){
+	var $button = $j('#btn_connect');
+	if($button.hasClass('disabled') || $button.prop('disabled')) return;	// 配对中禁止重复触发
+	$button.button('loading');	// spin (teal) via disabled state
+	$j.getJSON('/wps_action.asp',function(response){
+		var idTimeOut;
+		if(response.status == 0) {
+			$j('#wps_status_txt').text('配对中…');
+			// trigger accepted: pairing feedback up to 30s (practical WPS window),
+			// then success (teal) for 2s and reset
+			idTimeOut = setTimeout(function(){
+				clearTimeout(idTimeOut);
+				$button.removeClass('btn-info').addClass('btn-success');
+				$button.button('reset');
+				$button.addClass('wps-done');
+				var idTimeOut2 = setTimeout(function(){
+					clearTimeout(idTimeOut2);
+					$button.removeClass('wps-done')
+					       .removeClass('btn-success')
+					       .removeClass('btn-info')
+					       .addClass('btn-success');
+				}, 2000);
+			}, 30000);
+		} else {
+			// trigger failed: error (amber), 失败窗口内轮询不查询/不覆盖
+			wpsFailUntil = Date.now() + 4000;
+			$j('#wps_status_txt').text('配对失败');
+			$button.removeClass('btn-success').addClass('btn-info');
+			idTimeOut = setTimeout(function(){
+				clearTimeout(idTimeOut);
+				$button.button('reset');
+				$button.removeClass('btn-success')
+				       .removeClass('btn-info')
+				       .addClass('btn-success');
+			}, 2000);
+		}
+	})
 }
 
-function wps_status_poll() {
-    // 如果正在配对中或在失败保护期内，直接返回，不操作UI
-    if (isPairing || Date.now() < wpsFailUntil) return;
-
-    $j.getJSON('/wps_status.asp', function(res) {
-        var el = $j('#wps_status_txt');
-        if (!el.length) return;
-        var btn = $j('#btn_connect');
-        var s = res.status;
-
-        if (s >= 3) {
-            el.text('配对中…');
-            // 只有在按钮没禁用时才开启加载状态
-            if (!btn.hasClass('disabled')) {
-                btn.button('loading');
-            }
-        } else {
-            if (s == 2) el.text('配对失败');
-            else if (s == 34) el.text('已完成');
-            else el.text('空闲');
-            
-            if (btn.hasClass('disabled')) btn.button('reset');
-        }
-    });
+function wps_status_poll(){
+	$j.getJSON('/wps_status.asp',function(res){
+		var el = $j('#wps_status_txt');
+		if(!el.length) return;
+		var btn = $j('#btn_connect');
+		var s = res.status;
+		if(Date.now() < wpsFailUntil) return;	// 触发失败窗口: 保持琥珀失败态
+		if(s >= 3){
+			el.text('配对中…');
+			if(!btn.hasClass('disabled')) btn.button('loading');
+		} else {
+			if(s == 2) el.text('配对失败');
+			else if(s == 34) el.text('已完成');
+			else el.text('空闲');
+			if(btn.hasClass('disabled')) btn.button('reset');
+		}
+	});
 }
 
-function wl_wps_change() {
-    var f = document.form;
-    if (!f) return;
+function wl_wps_change(){
+	var mode = document.form.wl_auth_mode.value;
+	var wl_close = document.form.wl_closed.value;
+	var wl_radio = document.form.wl_radio_x.value;
 
-    var mode = f.wl_auth_mode.value;
-    var wl_close = f.wl_closed.value;
-    var wl_radio = f.wl_radio_x.value;
-
-    var isWpsActive = (wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0);
-
-    var $wlWps = $j("#wl_WPS");
-    var $wpsBtn = $j("#wps_button");
-
-    if (isWpsActive) {
-        // 建议使用 toggleClass 代替 show/hide，避免破坏原有布局显示
-        $wlWps.removeClass('hidden');
-        $wpsBtn.toggle(f.wl_WPS.value != 0);
-    } else {
-        $wlWps.addClass('hidden');
-        $wpsBtn.hide();
-    }
+	if( wl_radio == 1 && (mode == "open" || mode == "psk") && wl_close == 0) {
+		$("wl_WPS").style.display = "";
+		$("wps_button").style.display = (document.form.wl_WPS.value == 0) ? "none" : "";
+	} else {
+		$j("label.itoggle")[2].click();
+		$("wl_WPS").style.display = "none";
+		$("wps_button").style.display = "none";
+	}
 }
 
 function wl_auth_mode_change(isload){
