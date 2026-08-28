@@ -23,19 +23,22 @@ var $j = jQuery.noConflict();
 var ipmonitor = [<% get_static_client(); %>];
 var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-// 1. 必须加引号防止语法错误
+// 1. 使用引号包裹后端输出，即使后端为空，也会生成 var raw_data = ""; 不报错
 var raw_data = "<% wol_maclist(); %>"; 
 var wol_saved = [];
 
-// 2. 如果后端返回的是逗号分隔的字符串，将其转为数组
-if (raw_data) {
-    var parts = raw_data.split(','); 
-    parts.forEach(function(mac) {
-        if(mac.trim()) {
-            // 构造你后续代码需要的 [mac, name] 结构
-            wol_saved.push([mac.trim(), ""]); 
+// 2. 将后端字符串解析为 JS 数组
+if (raw_data && raw_data !== "" && raw_data !== "null") {
+    try {
+        // 因为保存时用的是 JSON.stringify，这里必须用 parse
+        var parsed = JSON.parse(raw_data);
+        if (Array.isArray(parsed)) {
+            wol_saved = parsed;
         }
-    });
+    } catch (e) {
+        console.error("WOL MAC列表解析失败:", e);
+        wol_saved = []; // 解析失败时初始化为空数组
+    }
 }
 
 var wol_saved_by_mac = {};
