@@ -758,6 +758,25 @@ input#btn_connect.btn-info {
     background-color: #E8A33D;
     animation: none;
 }
+/* 按钮加载时的视觉样式 */
+#btn_connect.is-loading {
+    cursor: wait !important;
+    opacity: 0.7;
+    position: relative;
+}
+
+/* 如果你想在按钮上加一个旋转圆圈，可以用伪元素实现 */
+#btn_connect.is-loading::after {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 5px;
+}
 @keyframes wps-spin {
     from { transform: translate(-50%, -50%) rotate(0deg); }
     to   { transform: translate(-50%, -50%) rotate(360deg); }
